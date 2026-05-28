@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>悦见销售科室会评分系统</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root {
             --primary: #1a56db;
@@ -1235,9 +1236,20 @@ const MAX_SCORES = { opening: 10, structure: 15, product: 25, clinical: 25, valu
 
 // ============ 数据存储 ============
 const STORAGE_KEY = 'yuejian_scores';
-const API_BASE = "";  // 留空=同源部署(Vercel); 填URL=跨域(如"https://xxx.vercel.app")
-const API_URL = API_BASE ? API_BASE + "/api/records" : "/api/records";
-let _apiAvailable = true;
+
+// ===== Supabase 配置（填入你的项目信息） =====
+const SUPABASE_URL = '';  // 例: https://xxxx.supabase.co
+const SUPABASE_KEY = '';  // 例: eyJhbGci...
+let _supabase = null;
+
+function initSupabase() {
+    if (SUPABASE_URL && SUPABASE_KEY && window.supabase) {
+        _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        console.log('Supabase 已连接');
+    } else {
+        console.warn('Supabase 未配置，使用本地存储模式');
+    }
+}
 
 function getScores() {
     try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); }
@@ -1248,51 +1260,62 @@ function saveScores(scores) {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(scores));
 }
 
-async function apiPost(record) {
+// 从 Supabase 拉取所有记录
+async function dbGetAll() {
+    if (!_supabase) return null;
     try {
-        const res = await fetch(API_URL, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(record)
-        });
-        if (!res.ok) throw new Error(res.status);
-        _apiAvailable = true;
-        return await res.json();
+        const { data, error } = await _supabase.from('scores').select('*').order('created_at', { ascending: true });
+        if (error) throw error;
+        return data || [];
     } catch(e) {
-        console.warn('API POST failed:', e);
-        _apiAvailable = false;
-    }
-}
-
-async function apiGet() {
-    try {
-        const res = await fetch(API_URL);
-        if (!res.ok) throw new Error(res.status);
-        _apiAvailable = true;
-        const json = await res.json();
-        return json.data || [];
-    } catch(e) {
-        console.warn('API GET failed:', e);
-        _apiAvailable = false;
+        console.warn('Supabase GET 失败:', e);
         return null;
     }
 }
 
-async function apiDelete(id) {
+// 写入一条记录到 Supabase
+async function dbInsert(record) {
+    if (!_supabase) return;
     try {
-        const res = await fetch(API_URL + '?id=' + encodeURIComponent(id), { method: 'DELETE' });
-        if (!res.ok) throw new Error(res.status);
-        _apiAvailable = true;
-        return await res.json();
+        const { error } = await _supabase.from('scores').upsert({
+            id: record.id,
+            examinee_name: record.examinee_name,
+            team: record.team,
+            judge_name: record.judge_name,
+            exam_date: record.exam_date,
+            duration: record.duration,
+            opening_score: record.opening_score,
+            structure_score: record.structure_score,
+            product_score: record.product_score,
+            clinical_score: record.clinical_score,
+            value_action_score: record.value_action_score,
+            total_score: record.total_score,
+            level: record.level,
+            comment: record.comment || '',
+            transcript: record.transcript || '',
+            created_at: record.created_at
+        });
+        if (error) throw error;
+        console.log('Supabase 同步成功');
     } catch(e) {
-        console.warn('API DELETE failed:', e);
-        _apiAvailable = false;
+        console.warn('Supabase INSERT 失败:', e);
     }
 }
 
-// 从API拉取数据并合并到本地
+// 删除一条记录
+async function dbDelete(id) {
+    if (!_supabase) return;
+    try {
+        const { error } = await _supabase.from('scores').delete().eq('id', id);
+        if (error) throw error;
+    } catch(e) {
+        console.warn('Supabase DELETE 失败:', e);
+    }
+}
+
+// 从服务器同步数据到本地
 async function syncFromServer() {
-    const serverData = await apiGet();
+    const serverData = await dbGetAll();
     if (!serverData) return;
     const local = getScores();
     const localIds = new Set(local.map(r => r.id));
@@ -1300,13 +1323,12 @@ async function syncFromServer() {
     serverData.forEach(r => {
         if (r.id && !localIds.has(r.id)) { local.push(r); added++; }
     });
+    // 把本地独有的推到服务器
     const serverIds = new Set(serverData.map(r => r.id));
     for (const r of local) {
-        if (!serverIds.has(r.id)) await apiPost(r);
+        if (!serverIds.has(r.id)) await dbInsert(r);
     }
-    if (added > 0 || local.length !== getScores().length) {
-        saveScores(local);
-    }
+    if (added > 0) saveScores(local);
 }
 
 // ============ 页面导航 ============
@@ -1619,7 +1641,7 @@ function doSubmit() {
 }
 
 async function syncToServer(record) {
-    await apiPost(record);
+    await dbInsert(record);
 }
 
 function resetScoringForm() {
