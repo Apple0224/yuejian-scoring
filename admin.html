@@ -487,7 +487,6 @@ let _cacheTime = 0;
 const CACHE_TTL = 3000; // 3秒缓存
 
 // ===== 数据存储 =====
-// ===== 数据存储 =====
 
 function getData() {
     if (_cachedData && (Date.now() - _cacheTime) < CACHE_TTL) {
@@ -497,7 +496,7 @@ function getData() {
     catch(e) { return []; }
 }
 
-async function fetchData() {async function fetchData() {
+async function fetchData() {
     const data = getData();
     _cachedData = data;
     _cacheTime = Date.now();
