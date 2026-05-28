@@ -1,19 +1,27 @@
-import Redis from 'ioredis';
+// 使用 Upstash Redis REST API（零原生依赖，纯 fetch）
+// 环境变量：UPSTASH_REDIS_REST_URL 和 UPSTASH_REDIS_REST_TOKEN
 
-function getRedis() {
-  if (!global._redis) {
-    let url = process.env.REDIS_URL;
-    // Redis Cloud 要求 TLS，把 redis:// 改为 rediss://
-    if (url && url.startsWith('redis://')) {
-      url = url.replace('redis://', 'rediss://');
-    }
-    global._redis = new Redis(url, {
-      tls: { rejectUnauthorized: false },
-      maxRetriesPerRequest: 3,
-      connectTimeout: 10000,
-    });
+async function upstash(command) {
+  const url = process.env.UPSTASH_REDIS_REST_URL || process.env.KV_REST_API_URL;
+  const token = process.env.UPSTASH_REDIS_REST_TOKEN || process.env.KV_REST_API_TOKEN;
+  
+  if (!url || !token) {
+    throw new Error('Missing Upstash Redis REST env vars. UPSTASH_REDIS_REST_URL=' + (url ? 'set' : 'missing') + ', UPSTASH_REDIS_REST_TOKEN=' + (token ? 'set' : 'missing'));
   }
-  return global._redis;
+
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' },
+    body: JSON.stringify(command),
+  });
+
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error('Upstash error: ' + res.status + ' ' + text);
+  }
+
+  const json = await res.json();
+  return json.result;
 }
 
 export default async function handler(req) {
@@ -32,17 +40,15 @@ export default async function handler(req) {
   }
 
   try {
-    const redis = getRedis();
-
     if (req.method === 'GET') {
-      const raw = await redis.get('records');
+      const raw = await upstash(['GET', 'records']);
       const records = raw ? JSON.parse(raw) : [];
       return new Response(JSON.stringify({ success: true, data: records }), { headers });
     }
 
     if (req.method === 'POST') {
       const body = await req.json();
-      const raw = await redis.get('records');
+      const raw = await upstash(['GET', 'records']);
       const records = raw ? JSON.parse(raw) : [];
       const idx = records.findIndex(r => r.id === body.id);
       if (idx >= 0) {
@@ -50,7 +56,7 @@ export default async function handler(req) {
       } else {
         records.push(body);
       }
-      await redis.set('records', JSON.stringify(records));
+      await upstash(['SET', 'records', JSON.stringify(records)]);
       return new Response(JSON.stringify({ success: true, data: body }), { headers });
     }
 
@@ -58,10 +64,10 @@ export default async function handler(req) {
       if (!id) {
         return new Response(JSON.stringify({ success: false, error: 'Missing id' }), { status: 400, headers });
       }
-      const raw = await redis.get('records');
+      const raw = await upstash(['GET', 'records']);
       const records = raw ? JSON.parse(raw) : [];
       const filtered = records.filter(r => r.id !== id);
-      await redis.set('records', JSON.stringify(filtered));
+      await upstash(['SET', 'records', JSON.stringify(filtered)]);
       return new Response(JSON.stringify({ success: true, deleted: records.length - filtered.length }), { headers });
     }
 
