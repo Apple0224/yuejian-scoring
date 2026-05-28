@@ -2,20 +2,21 @@ import Redis from 'ioredis';
 
 function getRedis() {
   if (!global._redis) {
-    const url = process.env.REDIS_URL;
-    console.log('Connecting to Redis, URL prefix:', url ? url.substring(0, 25) + '...' : 'MISSING');
+    let url = process.env.REDIS_URL;
+    // Redis Cloud 要求 TLS，把 redis:// 改为 rediss://
+    if (url && url.startsWith('redis://')) {
+      url = url.replace('redis://', 'rediss://');
+    }
     global._redis = new Redis(url, {
+      tls: { rejectUnauthorized: false },
       maxRetriesPerRequest: 3,
       connectTimeout: 10000,
-      lazyConnect: true,
-      retryStrategy: () => null,
     });
   }
   return global._redis;
 }
 
 export default async function handler(req) {
-  const { method } = req.method;
   const urlObj = new URL(req.url);
   const id = urlObj.searchParams.get('id');
 
@@ -32,10 +33,6 @@ export default async function handler(req) {
 
   try {
     const redis = getRedis();
-    // 确保连接
-    if (redis.status !== 'ready') {
-      await redis.connect();
-    }
 
     if (req.method === 'GET') {
       const raw = await redis.get('records');
@@ -70,7 +67,6 @@ export default async function handler(req) {
 
     return new Response(JSON.stringify({ success: false, error: 'Method not allowed' }), { status: 405, headers });
   } catch (err) {
-    console.error('API Error:', err);
-    return new Response(JSON.stringify({ success: false, error: err.message, stack: err.stack?.split('\n').slice(0, 5) }), { status: 500, headers });
+    return new Response(JSON.stringify({ success: false, error: err.message }), { status: 500, headers });
   }
 }
