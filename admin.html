@@ -486,6 +486,10 @@ let _cachedData = null;
 let _cacheTime = 0;
 const CACHE_TTL = 3000; // 3秒缓存
 
+const API_BASE = "";  // 留空=同源部署(Vercel); 填URL=跨域
+const API_URL = API_BASE ? API_BASE + "/api/records" : "/api/records";
+let _apiAvailable = true;
+
 function getData() {
     if (_cachedData && (Date.now() - _cacheTime) < CACHE_TTL) {
         return _cachedData;
@@ -494,8 +498,69 @@ function getData() {
     catch(e) { return []; }
 }
 
+async function apiGet() {
+    try {
+        const res = await fetch(API_URL);
+        if (!res.ok) throw new Error(res.status);
+        _apiAvailable = true;
+        const json = await res.json();
+        return json.data || [];
+    } catch(e) {
+        console.warn('API GET failed:', e);
+        _apiAvailable = false;
+        return null;
+    }
+}
+
+async function apiPost(record) {
+    try {
+        const res = await fetch(API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(record)
+        });
+        if (!res.ok) throw new Error(res.status);
+        _apiAvailable = true;
+        return await res.json();
+    } catch(e) {
+        console.warn('API POST failed:', e);
+        _apiAvailable = false;
+    }
+}
+
+async function apiDelete(id) {
+    try {
+        const res = await fetch(API_URL + '?id=' + encodeURIComponent(id), { method: 'DELETE' });
+        if (!res.ok) throw new Error(res.status);
+        _apiAvailable = true;
+        return await res.json();
+    } catch(e) {
+        console.warn('API DELETE failed:', e);
+        _apiAvailable = false;
+    }
+}
+
 async function fetchData() {
-    // 纯本地存储，直接返回 localStorage 数据
+    const serverData = await apiGet();
+    if (serverData) {
+        const local = getData();
+        const localIds = new Set(local.map(r => r.id));
+        let newFromServer = 0;
+        serverData.forEach(r => {
+            if (r.id && !localIds.has(r.id)) { local.push(r); newFromServer++; }
+        });
+        const serverIds = new Set(serverData.map(r => r.id));
+        for (const r of local) {
+            if (!serverIds.has(r.id)) await apiPost(r);
+        }
+        if (newFromServer > 0) {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(local));
+        }
+        _cachedData = local;
+        _cacheTime = Date.now();
+        return local;
+    }
+    // API不可用，降级为纯本地
     const data = getData();
     _cachedData = data;
     _cacheTime = Date.now();
@@ -652,6 +717,7 @@ async function renderRecords() {
 
 async function deleteRecord(id) {
     if (!confirm('确定删除该评分记录？此操作不可恢复。')) return;
+    await apiDelete(id);
     let data = getData();
     data = data.filter(d => d.id !== id);
     _cachedData = data;
@@ -663,6 +729,11 @@ async function deleteRecord(id) {
 async function clearAllData() {
     if (!confirm('⚠️ 确定清空所有评分数据？此操作不可恢复！')) return;
     if (!confirm('再次确认：清空所有数据？')) return;
+    // 删除服务器上每条记录
+    const allData = getData();
+    for (const r of allData) {
+        await apiDelete(r.id);
+    }
     _cachedData = [];
     localStorage.setItem(STORAGE_KEY, '[]');
     showToast('已清空所有数据');

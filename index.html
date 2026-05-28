@@ -1235,6 +1235,9 @@ const MAX_SCORES = { opening: 10, structure: 15, product: 25, clinical: 25, valu
 
 // ============ 数据存储 ============
 const STORAGE_KEY = 'yuejian_scores';
+const API_BASE = "";  // 留空=同源部署(Vercel); 填URL=跨域(如"https://xxx.vercel.app")
+const API_URL = API_BASE ? API_BASE + "/api/records" : "/api/records";
+let _apiAvailable = true;
 
 function getScores() {
     try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); }
@@ -1243,6 +1246,67 @@ function getScores() {
 
 function saveScores(scores) {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(scores));
+}
+
+async function apiPost(record) {
+    try {
+        const res = await fetch(API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(record)
+        });
+        if (!res.ok) throw new Error(res.status);
+        _apiAvailable = true;
+        return await res.json();
+    } catch(e) {
+        console.warn('API POST failed:', e);
+        _apiAvailable = false;
+    }
+}
+
+async function apiGet() {
+    try {
+        const res = await fetch(API_URL);
+        if (!res.ok) throw new Error(res.status);
+        _apiAvailable = true;
+        const json = await res.json();
+        return json.data || [];
+    } catch(e) {
+        console.warn('API GET failed:', e);
+        _apiAvailable = false;
+        return null;
+    }
+}
+
+async function apiDelete(id) {
+    try {
+        const res = await fetch(API_URL + '?id=' + encodeURIComponent(id), { method: 'DELETE' });
+        if (!res.ok) throw new Error(res.status);
+        _apiAvailable = true;
+        return await res.json();
+    } catch(e) {
+        console.warn('API DELETE failed:', e);
+        _apiAvailable = false;
+    }
+}
+
+// 从API拉取数据并合并到本地
+async function syncFromServer() {
+    const serverData = await apiGet();
+    if (!serverData) return;
+    const local = getScores();
+    const localIds = new Set(local.map(r => r.id));
+    let added = 0;
+    serverData.forEach(r => {
+        if (r.id && !localIds.has(r.id)) { local.push(r); added++; }
+    });
+    const serverIds = new Set(serverData.map(r => r.id));
+    for (const r of local) {
+        if (!serverIds.has(r.id)) await apiPost(r);
+    }
+    if (added > 0 || local.length !== getScores().length) {
+        saveScores(local);
+    }
 }
 
 // ============ 页面导航 ============
@@ -1545,7 +1609,7 @@ function doSubmit() {
     saveScores(allScores);
 
     // 同步到服务端（后台管理可查看）
-    syncToServer(record);
+    await syncToServer(record);
 
     showToast('✅ 提交成功！');
     setTimeout(() => {
@@ -1554,13 +1618,8 @@ function doSubmit() {
     }, 800);
 }
 
-function syncToServer(record) {
-    // 纯本地存储，无需后端
-}
-
-// ============ 数据同步（通过导出/导入） ============
-async function syncFromServer() {
-    // 纯本地存储，无需后端
+async function syncToServer(record) {
+    await apiPost(record);
 }
 
 function resetScoringForm() {

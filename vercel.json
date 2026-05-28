@@ -1,0 +1,9 @@
+{
+  "rewrites": [
+    { "source": "/api/records", "destination": "/api/records.js" },
+    { "source": "/api/records/:id", "destination": "/api/records.js" }
+  ],
+  "headers": [
+    { "source": "/(.*)", "headers": [{ "key": "Cache-Control", "value": "no-cache" }] }
+  ]
+}
