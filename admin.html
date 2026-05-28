@@ -1,0 +1,930 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>悦见评分系统 · 后台管理</title>
+    <style>
+        :root {
+            --primary: #1a56db;
+            --primary-light: #e8eefb;
+            --success: #16a34a;
+            --success-light: #dcfce7;
+            --danger: #dc2626;
+            --danger-light: #fef2f2;
+            --warning: #d97706;
+            --warning-light: #fff7ed;
+            --excellent: #7c3aed;
+            --excellent-light: #f3f0ff;
+            --bg: #f0f2f5;
+            --card: #ffffff;
+            --text: #1f2937;
+            --text-secondary: #6b7280;
+            --border: #e5e7eb;
+            --radius: 12px;
+            --shadow: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.06);
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Microsoft YaHei", sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+        }
+
+        /* Layout */
+        .sidebar {
+            position: fixed; left: 0; top: 0; bottom: 0; width: 220px;
+            background: linear-gradient(180deg, #1e293b, #334155);
+            color: #fff; padding: 20px 0; z-index: 100;
+            overflow-y: auto;
+        }
+        .sidebar .logo {
+            padding: 0 20px 20px; border-bottom: 1px solid rgba(255,255,255,0.1);
+            margin-bottom: 12px;
+        }
+        .sidebar .logo h2 { font-size: 16px; font-weight: 700; }
+        .sidebar .logo p { font-size: 11px; opacity: 0.6; margin-top: 2px; }
+        .nav-item {
+            display: flex; align-items: center; gap: 10px;
+            padding: 12px 20px; cursor: pointer; font-size: 14px;
+            transition: all 0.15s; color: rgba(255,255,255,0.7);
+        }
+        .nav-item:hover { background: rgba(255,255,255,0.08); color: #fff; }
+        .nav-item.active { background: rgba(255,255,255,0.12); color: #fff; border-right: 3px solid #60a5fa; }
+        .nav-item .icon { font-size: 18px; width: 24px; text-align: center; }
+
+        .main { margin-left: 220px; padding: 24px; min-height: 100vh; }
+        .page-header { margin-bottom: 24px; }
+        .page-header h1 { font-size: 22px; font-weight: 700; }
+        .page-header p { font-size: 13px; color: var(--text-secondary); margin-top: 4px; }
+
+        /* Stats Cards */
+        .stats-grid {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px; margin-bottom: 24px;
+        }
+        .stat-card {
+            background: var(--card); border-radius: var(--radius);
+            box-shadow: var(--shadow); padding: 20px;
+        }
+        .stat-card .label { font-size: 13px; color: var(--text-secondary); margin-bottom: 4px; }
+        .stat-card .value { font-size: 32px; font-weight: 800; }
+        .stat-card .sub { font-size: 12px; color: var(--text-secondary); margin-top: 4px; }
+        .stat-card.accent .value { color: var(--primary); }
+        .stat-card.success .value { color: var(--success); }
+        .stat-card.danger .value { color: var(--danger); }
+        .stat-card.purple .value { color: var(--excellent); }
+
+        /* Table */
+        .table-card {
+            background: var(--card); border-radius: var(--radius);
+            box-shadow: var(--shadow); overflow: hidden;
+        }
+        .table-toolbar {
+            padding: 16px 20px; display: flex; gap: 12px; align-items: center;
+            flex-wrap: wrap; border-bottom: 1px solid var(--border);
+        }
+        .table-toolbar select, .table-toolbar input {
+            padding: 8px 12px; border: 1.5px solid var(--border); border-radius: 8px;
+            font-size: 13px; background: #fff;
+        }
+        .toolbar-btn {
+            padding: 8px 16px; border-radius: 8px; font-size: 13px; font-weight: 600;
+            cursor: pointer; border: none; display: inline-flex; align-items: center; gap: 6px;
+        }
+        .toolbar-btn.primary { background: var(--primary); color: #fff; }
+        .toolbar-btn.outline { background: #fff; color: var(--text); border: 1.5px solid var(--border); }
+        .toolbar-btn.danger { background: var(--danger-light); color: var(--danger); }
+
+        table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        thead { background: #f8fafc; }
+        th { padding: 12px 14px; text-align: left; font-weight: 600; color: var(--text-secondary); font-size: 12px; white-space: nowrap; }
+        td { padding: 12px 14px; border-top: 1px solid var(--border); }
+        tr:hover td { background: #f8fafc; }
+        tr { -webkit-tap-highlight-color: transparent; }
+        .tag { padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; display: inline-block; }
+        .tag-pass { background: var(--success-light); color: var(--success); }
+        .tag-fail { background: var(--danger-light); color: var(--danger); }
+        .tag-excellent { background: var(--excellent-light); color: var(--excellent); }
+        .tag-good { background: var(--primary-light); color: var(--primary); }
+
+        .score-bar { display: flex; align-items: center; gap: 8px; }
+        .score-bar .bar { width: 60px; height: 6px; background: #e5e7eb; border-radius: 3px; overflow: hidden; }
+        .score-bar .fill { height: 100%; border-radius: 3px; transition: width 0.3s; }
+
+        /* Section panels */
+        .section { display: none; }
+        .section.active { display: block; animation: fadeIn 0.2s ease; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        /* Chart containers */
+        .chart-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px; }
+        .chart-card {
+            background: var(--card); border-radius: var(--radius);
+            box-shadow: var(--shadow); padding: 20px;
+        }
+        .chart-card h3 { font-size: 15px; font-weight: 600; margin-bottom: 16px; }
+        .bar-chart { display: flex; flex-direction: column; gap: 10px; }
+        .bar-row { display: flex; align-items: center; gap: 10px; }
+        .bar-row .name { width: 70px; font-size: 12px; color: var(--text-secondary); text-align: right; flex-shrink: 0; }
+        .bar-row .track { flex: 1; height: 28px; background: #f3f4f6; border-radius: 6px; overflow: hidden; position: relative; }
+        .bar-row .fill { height: 100%; border-radius: 6px; display: flex; align-items: center; padding-left: 8px; font-size: 11px; font-weight: 700; color: #fff; min-width: 30px; transition: width 0.5s ease; }
+        .bar-row .count { font-size: 12px; color: var(--text-secondary); width: 40px; text-align: right; flex-shrink: 0; }
+
+        .pie-chart { display: flex; align-items: center; gap: 24px; justify-content: center; }
+        .pie-visual { width: 140px; height: 140px; border-radius: 50%; position: relative; }
+        .pie-legend { display: flex; flex-direction: column; gap: 8px; }
+        .pie-legend-item { display: flex; align-items: center; gap: 8px; font-size: 13px; }
+        .pie-dot { width: 12px; height: 12px; border-radius: 3px; flex-shrink: 0; }
+
+        /* Detail Modal */
+        .modal-overlay {
+            display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.5); z-index: 200; align-items: center; justify-content: center;
+        }
+        .modal-overlay.show { display: flex; }
+        .modal-box {
+            background: #fff; border-radius: 16px; padding: 24px; width: calc(100% - 48px);
+            max-width: 600px; max-height: 80vh; overflow-y: auto;
+        }
+        .modal-box h3 { font-size: 17px; margin-bottom: 16px; display: flex; justify-content: space-between; }
+        .modal-close { background: #f3f4f6; border: none; width: 32px; height: 32px; border-radius: 50%; font-size: 16px; cursor: pointer; }
+        .detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .detail-item { padding: 10px 12px; background: #f8fafc; border-radius: 8px; }
+        .detail-item .dl { font-size: 11px; color: var(--text-secondary); }
+        .detail-item .dv { font-size: 15px; font-weight: 600; margin-top: 2px; }
+        .detail-item.full { grid-column: 1 / -1; }
+
+        /* Region comparison */
+        .region-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 24px; }
+        .region-card {
+            background: var(--card); border-radius: var(--radius); box-shadow: var(--shadow);
+            padding: 16px; text-align: center; cursor: pointer; transition: all 0.15s;
+        }
+        .region-card:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        .region-card .region-name { font-size: 15px; font-weight: 700; margin-bottom: 8px; }
+        .region-card .region-avg { font-size: 28px; font-weight: 800; }
+        .region-card .region-count { font-size: 12px; color: var(--text-secondary); margin-top: 4px; }
+        .region-card .region-rate { font-size: 13px; font-weight: 600; margin-top: 6px; }
+        .region-card.huadong .region-name { color: #2563eb; }
+        .region-card.huaxi .region-name { color: #16a34a; }
+        .region-card.huanan .region-name { color: #d97706; }
+        .region-card.huabei .region-name { color: #7c3aed; }
+        .region-card.huadong .region-avg { color: #2563eb; }
+        .region-card.huaxi .region-avg { color: #16a34a; }
+        .region-card.huanan .region-avg { color: #d97706; }
+        .region-card.huabei .region-avg { color: #7c3aed; }
+
+        /* Empty state */
+        .empty { text-align: center; padding: 60px 24px; color: var(--text-secondary); }
+        .empty .icon { font-size: 48px; margin-bottom: 12px; }
+
+        /* Toast */
+        .toast {
+            position: fixed; top: 24px; right: 24px; background: #1e293b; color: #fff;
+            padding: 12px 20px; border-radius: 8px; font-size: 14px; z-index: 400;
+            opacity: 0; transition: opacity 0.3s; pointer-events: none;
+        }
+        .toast.show { opacity: 1; }
+
+        /* Responsive */
+        @media (max-width: 900px) {
+            .sidebar { display: none; }
+            .main { margin-left: 0; padding: 16px 12px; }
+            .chart-row { grid-template-columns: 1fr; }
+            .region-grid { grid-template-columns: 1fr 1fr; }
+            .stats-grid { grid-template-columns: 1fr 1fr; gap: 10px; }
+            .page-header { margin-bottom: 16px; }
+            .page-header h1 { font-size: 18px; }
+        }
+        @media (max-width: 480px) {
+            .main { padding: 12px 8px 90px; }
+            .stats-grid { grid-template-columns: 1fr 1fr; gap: 8px; }
+            .stat-card { padding: 14px; }
+            .stat-card .value { font-size: 24px; }
+            .stat-card .label { font-size: 11px; }
+            .region-grid { grid-template-columns: 1fr 1fr; gap: 8px; }
+            .region-card { padding: 12px; }
+            .region-card .region-avg { font-size: 22px; }
+            .page-header h1 { font-size: 16px; }
+            .table-toolbar { padding: 10px 12px; gap: 8px; }
+            .table-toolbar select, .table-toolbar input { font-size: 12px; padding: 6px 10px; min-width: 0; flex: 1; }
+            .toolbar-btn { padding: 6px 12px; font-size: 12px; }
+            table { font-size: 12px; }
+            th, td { padding: 8px 10px; }
+            .detail-grid { grid-template-columns: 1fr; }
+            .modal-box { padding: 16px; border-radius: 12px; }
+            .modal-box h3 { font-size: 15px; }
+            .chart-card { padding: 14px; }
+            .chart-card h3 { font-size: 14px; }
+            .bar-row .name { width: 56px; font-size: 11px; }
+            .bar-row .fill { font-size: 10px; }
+            .pie-chart { flex-direction: column; gap: 16px; }
+            .pie-visual { width: 110px; height: 110px; }
+        }
+
+        /* Mobile nav */
+        .mobile-nav {
+            display: none; position: fixed; bottom: 0; left: 0; right: 0;
+            background: #fff; border-top: 1px solid var(--border); z-index: 100;
+            padding: 6px 0; justify-content: space-around;
+            box-shadow: 0 -2px 8px rgba(0,0,0,0.06);
+        }
+        .mobile-nav-item {
+            display: flex; flex-direction: column; align-items: center; gap: 2px;
+            font-size: 10px; color: var(--text-secondary); cursor: pointer; padding: 4px 8px;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .mobile-nav-item.active { color: var(--primary); }
+        .mobile-nav-item .icon { font-size: 20px; }
+        @media (max-width: 900px) { .mobile-nav { display: flex; } .main { padding-bottom: 80px; } }
+    </style>
+</head>
+<body>
+
+<!-- Sidebar -->
+<nav class="sidebar">
+    <div class="logo">
+        <h2>📋 悦见评分系统</h2>
+        <p>后台管理中心</p>
+    </div>
+    <div class="nav-item active" onclick="showSection('dashboard')">
+        <span class="icon">📊</span> 数据总览
+    </div>
+    <div class="nav-item" onclick="showSection('records')">
+        <span class="icon">📝</span> 评分记录
+    </div>
+    <div class="nav-item" onclick="showSection('ranking')">
+        <span class="icon">🏆</span> 成绩排名
+    </div>
+    <div class="nav-item" onclick="showSection('regions')">
+        <span class="icon">🗺️</span> 大区对比
+    </div>
+    <div class="nav-item" onclick="showSection('analysis')">
+        <span class="icon">📈</span> 维度分析
+    </div>
+    <div class="nav-item" onclick="showSection('export')">
+        <span class="icon">📥</span> 数据导出
+    </div>
+</nav>
+
+<!-- Mobile Nav -->
+<div class="mobile-nav">
+    <div class="mobile-nav-item active" onclick="showSection('dashboard')"><span class="icon">📊</span>总览</div>
+    <div class="mobile-nav-item" onclick="showSection('records')"><span class="icon">📝</span>记录</div>
+    <div class="mobile-nav-item" onclick="showSection('ranking')"><span class="icon">🏆</span>排名</div>
+    <div class="mobile-nav-item" onclick="showSection('regions')"><span class="icon">🗺️</span>大区</div>
+    <div class="mobile-nav-item" onclick="showSection('analysis')"><span class="icon">📈</span>分析</div>
+    <div class="mobile-nav-item" onclick="showSection('export')"><span class="icon">📥</span>导出</div>
+</div>
+
+<div class="main">
+
+    <!-- ========== 数据总览 ========== -->
+    <div id="sec-dashboard" class="section active">
+        <div class="page-header">
+            <h1>📊 数据总览</h1>
+            <p>悦见销售科室会评分系统 · 实时数据看板</p>
+        </div>
+        <div class="stats-grid" id="stats-grid"></div>
+        <div class="chart-row">
+            <div class="chart-card">
+                <h3>大区平均分对比</h3>
+                <div id="chart-region-avg" class="bar-chart"></div>
+            </div>
+            <div class="chart-card">
+                <h3>等级分布</h3>
+                <div id="chart-level-pie" class="pie-chart"></div>
+            </div>
+        </div>
+        <div class="chart-row">
+            <div class="chart-card">
+                <h3>通过率趋势</h3>
+                <div id="chart-trend" class="bar-chart"></div>
+            </div>
+            <div class="chart-card">
+                <h3>最近评分记录</h3>
+                <div id="recent-records"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========== 评分记录 ========== -->
+    <div id="sec-records" class="section">
+        <div class="page-header">
+            <h1>📝 评分记录</h1>
+            <p>查看、搜索和管理所有评分记录</p>
+        </div>
+        <div class="table-card">
+            <div class="table-toolbar">
+                <input type="text" id="search-name" placeholder="搜索姓名..." oninput="renderRecords()">
+                <select id="filter-region" onchange="renderRecords()">
+                    <option value="">全部大区</option>
+                    <option value="华东区">华东区</option>
+                    <option value="华西区">华西区</option>
+                    <option value="华南区">华南区</option>
+                    <option value="华北区">华北区</option>
+                </select>
+                <select id="filter-level" onchange="renderRecords()">
+                    <option value="">全部等级</option>
+                    <option value="优秀">优秀</option>
+                    <option value="良好">良好</option>
+                    <option value="及格">及格</option>
+                    <option value="不及格">不及格</option>
+                </select>
+                <select id="filter-pass" onchange="renderRecords()">
+                    <option value="">全部状态</option>
+                    <option value="pass">已通过</option>
+                    <option value="fail">未通过</option>
+                </select>
+                <input type="date" id="filter-date-from" onchange="renderRecords()" style="max-width:140px;">
+                <span style="font-size:12px;color:var(--text-secondary)">至</span>
+                <input type="date" id="filter-date-to" onchange="renderRecords()" style="max-width:140px;">
+                <button class="toolbar-btn danger" onclick="clearAllData()">🗑️ 清空数据</button>
+            </div>
+            <div style="overflow-x:auto;">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>姓名</th><th>大区</th><th>评委</th><th>日期</th>
+                            <th>开场</th><th>组织</th><th>产品</th><th>临床</th><th>价值</th>
+                            <th>总分</th><th>等级</th><th>结果</th><th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="records-tbody"></tbody>
+                </table>
+            </div>
+            <div id="records-empty" class="empty" style="display:none;">
+                <div class="icon">📭</div><div>暂无评分记录</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========== 成绩排名 ========== -->
+    <div id="sec-ranking" class="section">
+        <div class="page-header">
+            <h1>🏆 成绩排名</h1>
+            <p>按总分从高到低排列，支持按大区筛选</p>
+        </div>
+        <div class="table-card">
+            <div class="table-toolbar">
+                <select id="rank-region" onchange="renderRanking()">
+                    <option value="">全部大区</option>
+                    <option value="华东区">华东区</option>
+                    <option value="华西区">华西区</option>
+                    <option value="华南区">华南区</option>
+                    <option value="华北区">华北区</option>
+                </select>
+                <input type="date" id="rank-date" onchange="renderRanking()">
+            </div>
+            <div style="overflow-x:auto;">
+                <table>
+                    <thead>
+                        <tr><th>排名</th><th>姓名</th><th>大区</th><th>评委</th><th>总分</th><th>等级</th><th>结果</th><th>日期</th></tr>
+                    </thead>
+                    <tbody id="ranking-tbody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========== 大区对比 ========== -->
+    <div id="sec-regions" class="section">
+        <div class="page-header">
+            <h1>🗺️ 大区对比</h1>
+            <p>各大区考核数据横向对比</p>
+        </div>
+        <div class="region-grid" id="region-cards"></div>
+        <div class="chart-row">
+            <div class="chart-card">
+                <h3>大区各维度平均分</h3>
+                <div id="chart-region-dims" class="bar-chart"></div>
+            </div>
+            <div class="chart-card">
+                <h3>大区通过率</h3>
+                <div id="chart-region-pass" class="bar-chart"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========== 维度分析 ========== -->
+    <div id="sec-analysis" class="section">
+        <div class="page-header">
+            <h1>📈 维度分析</h1>
+            <p>五项评分维度的深度分析</p>
+        </div>
+        <div class="stats-grid" id="dim-stats"></div>
+        <div class="chart-row">
+            <div class="chart-card">
+                <h3>各维度平均得分率</h3>
+                <div id="chart-dim-rate" class="bar-chart"></div>
+            </div>
+            <div class="chart-card">
+                <h3>各维度不及格率</h3>
+                <div id="chart-dim-fail" class="bar-chart"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========== 数据导出 ========== -->
+    <div id="sec-export" class="section">
+        <div class="page-header">
+            <h1>📥 数据导出</h1>
+            <p>导出评分数据，支持 CSV 和 JSON 格式</p>
+        </div>
+        <div class="chart-row" style="grid-template-columns:1fr 1fr 1fr;">
+            <div class="chart-card" style="text-align:center; padding:40px;">
+                <div style="font-size:48px; margin-bottom:16px;">📄</div>
+                <h3>CSV 格式</h3>
+                <p style="font-size:13px; color:var(--text-secondary); margin:8px 0 16px;">可用 Excel 打开，包含所有评分字段</p>
+                <button class="toolbar-btn primary" onclick="exportCSV()" style="padding:12px 32px; font-size:15px;">导出 CSV</button>
+            </div>
+            <div class="chart-card" style="text-align:center; padding:40px;">
+                <div style="font-size:48px; margin-bottom:16px;">📋</div>
+                <h3>JSON 格式</h3>
+                <p style="font-size:13px; color:var(--text-secondary); margin:8px 0 16px;">结构化数据格式，适合程序处理和导入</p>
+                <button class="toolbar-btn primary" onclick="exportJSON()" style="padding:12px 32px; font-size:15px;">导出 JSON</button>
+            </div>
+            <div class="chart-card" style="text-align:center; padding:40px;">
+                <div style="font-size:48px; margin-bottom:16px;">📥</div>
+                <h3>导入数据</h3>
+                <p style="font-size:13px; color:var(--text-secondary); margin:8px 0 16px;">导入其他评委的 JSON 数据，自动去重合并</p>
+                <button class="toolbar-btn primary" onclick="importJSON()" style="padding:12px 32px; font-size:15px;">导入 JSON</button>
+            </div>
+        </div>
+        <div class="chart-card">
+            <h3>数据概览</h3>
+            <div id="export-preview"></div>
+        </div>
+    </div>
+</div>
+
+<!-- Detail Modal -->
+<div class="modal-overlay" id="detail-modal">
+    <div class="modal-box">
+        <h3><span>评分详情</span><button class="modal-close" onclick="closeModal()">✕</button></h3>
+        <div id="modal-content"></div>
+    </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+const STORAGE_KEY = 'yuejian_scores';
+const REGIONS = ['华东区', '华西区', '华南区', '华北区'];
+const DIMS = [
+    { key: 'opening_score', label: '开场引入', max: 10 },
+    { key: 'structure_score', label: '内容组织', max: 15 },
+    { key: 'product_score', label: '产品知识', max: 25 },
+    { key: 'clinical_score', label: '临床专业', max: 25 },
+    { key: 'value_action_score', label: '价值传递', max: 25 }
+];
+
+let _cachedData = null;
+let _cacheTime = 0;
+const CACHE_TTL = 3000; // 3秒缓存
+
+function getData() {
+    if (_cachedData && (Date.now() - _cacheTime) < CACHE_TTL) {
+        return _cachedData;
+    }
+    try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); }
+    catch(e) { return []; }
+}
+
+async function fetchData() {
+    // 纯本地存储，直接返回 localStorage 数据
+    const data = getData();
+    _cachedData = data;
+    _cacheTime = Date.now();
+    return data;
+}
+
+// ============ Navigation ============
+async function showSection(id) {
+    document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+    document.getElementById('sec-' + id).classList.add('active');
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    document.querySelectorAll('.mobile-nav-item').forEach(n => n.classList.remove('active'));
+    try { event?.target?.closest?.('.nav-item, .mobile-nav-item')?.classList.add('active'); } catch(e) {}
+    // Refresh data
+    if (id === 'dashboard') await renderDashboard();
+    if (id === 'records') await renderRecords();
+    if (id === 'ranking') await renderRanking();
+    if (id === 'regions') await renderRegions();
+    if (id === 'analysis') await renderAnalysis();
+    if (id === 'export') await renderExport();
+}
+
+// ============ Dashboard ============
+async function renderDashboard() {
+    const data = await fetchData();
+    const total = data.length;
+    const passed = data.filter(d => d.level !== '不及格').length;
+    const failed = total - passed;
+    const passRate = total ? (passed / total * 100).toFixed(1) : 0;
+    const avgScore = total ? (data.reduce((s, d) => s + d.total_score, 0) / total).toFixed(1) : 0;
+    const excellent = data.filter(d => d.level === '优秀').length;
+
+    document.getElementById('stats-grid').innerHTML = `
+        <div class="stat-card accent"><div class="label">总评分人数</div><div class="value">${total}</div><div class="sub">累计考核记录</div></div>
+        <div class="stat-card success"><div class="label">通过率</div><div class="value">${passRate}%</div><div class="sub">通过 ${passed} / 未通过 ${failed}</div></div>
+        <div class="stat-card purple"><div class="label">平均分</div><div class="value">${avgScore}</div><div class="sub">满分 100</div></div>
+        <div class="stat-card danger"><div class="label">优秀率</div><div class="value">${total ? (excellent/total*100).toFixed(1) : 0}%</div><div class="sub">优秀 ${excellent} 人</div></div>
+    `;
+
+    // Region avg chart
+    const regionAvgs = REGIONS.map(r => {
+        const rd = data.filter(d => d.team === r);
+        return { name: r, avg: rd.length ? (rd.reduce((s,d) => s + d.total_score, 0) / rd.length).toFixed(1) : 0, count: rd.length };
+    });
+    const maxAvg = Math.max(...regionAvgs.map(r => parseFloat(r.avg)), 1);
+    document.getElementById('chart-region-avg').innerHTML = regionAvgs.map(r => {
+        const pct = (r.avg / 100 * 100).toFixed(0);
+        const colors = { '华东区': '#2563eb', '华西区': '#16a34a', '华南区': '#d97706', '华北区': '#7c3aed' };
+        return `<div class="bar-row"><div class="name">${r.name}</div><div class="track"><div class="fill" style="width:${pct}%;background:${colors[r.name]}">${r.avg}</div></div><div class="count">${r.count}人</div></div>`;
+    }).join('');
+
+    // Level pie
+    const levels = { '优秀': 0, '良好': 0, '及格': 0, '不及格': 0 };
+    data.forEach(d => { if (levels.hasOwnProperty(d.level)) levels[d.level]++; });
+    const levelColors = { '优秀': '#7c3aed', '良好': '#2563eb', '及格': '#16a34a', '不及格': '#dc2626' };
+    let pieGrad = '';
+    let cumPct = 0;
+    const totalForPie = total || 1;
+    Object.entries(levels).forEach(([k, v]) => {
+        const pct = v / totalForPie * 100;
+        pieGrad += `${levelColors[k]} ${cumPct}% ${cumPct + pct}%,`;
+        cumPct += pct;
+    });
+    pieGrad = pieGrad.slice(0, -1);
+    document.getElementById('chart-level-pie').innerHTML = `
+        <div class="pie-visual" style="background:conic-gradient(${pieGrad})"></div>
+        <div class="pie-legend">${Object.entries(levels).map(([k,v]) => `<div class="pie-legend-item"><div class="pie-dot" style="background:${levelColors[k]}"></div>${k}：${v}人 (${total ? (v/total*100).toFixed(0) : 0}%)</div>`).join('')}</div>
+    `;
+
+    // Trend (by date)
+    const dateMap = {};
+    data.forEach(d => {
+        if (!dateMap[d.exam_date]) dateMap[d.exam_date] = { total: 0, pass: 0 };
+        dateMap[d.exam_date].total++;
+        if (d.level !== '不及格') dateMap[d.exam_date].pass++;
+    });
+    const dates = Object.keys(dateMap).sort();
+    const last7 = dates.slice(-7);
+    document.getElementById('chart-trend').innerHTML = last7.map(dt => {
+        const info = dateMap[dt];
+        const rate = (info.pass / info.total * 100).toFixed(0);
+        return `<div class="bar-row"><div class="name">${dt.slice(5)}</div><div class="track"><div class="fill" style="width:${rate}%;background:${parseFloat(rate)>=80?'var(--success)':'var(--danger)'}">${rate}%</div></div><div class="count">${info.total}人</div></div>`;
+    }).join('') || '<div style="text-align:center;color:var(--text-secondary);padding:20px;">暂无数据</div>';
+
+    // Recent records
+    const recent = data.sort((a,b) => new Date(b.created_at) - new Date(a.created_at)).slice(0, 5);
+    document.getElementById('recent-records').innerHTML = recent.length ? recent.map(d => {
+        const tagCls = d.level === '优秀' ? 'tag-excellent' : d.level === '不及格' ? 'tag-fail' : d.level === '良好' ? 'tag-good' : 'tag-pass';
+        return `<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);">
+            <div><span style="font-weight:600">${d.examinee_name}</span> <span style="font-size:12px;color:var(--text-secondary)">${d.team}</span></div>
+            <div style="display:flex;align-items:center;gap:8px;"><span style="font-weight:700">${d.total_score}分</span><span class="tag ${tagCls}">${d.level}</span></div>
+        </div>`;
+    }).join('') : '<div style="text-align:center;color:var(--text-secondary);padding:20px;">暂无记录</div>';
+}
+
+// ============ Records ============
+async function renderRecords() {
+    let data = await fetchData();
+    const search = document.getElementById('search-name').value.trim().toLowerCase();
+    const region = document.getElementById('filter-region').value;
+    const level = document.getElementById('filter-level').value;
+    const pass = document.getElementById('filter-pass').value;
+    const dateFrom = document.getElementById('filter-date-from').value;
+    const dateTo = document.getElementById('filter-date-to').value;
+
+    if (search) data = data.filter(d => d.examinee_name.toLowerCase().includes(search) || d.judge_name.toLowerCase().includes(search));
+    if (region) data = data.filter(d => d.team === region);
+    if (level) data = data.filter(d => d.level === level);
+    if (pass) data = data.filter(d => pass === 'pass' ? d.level !== '不及格' : d.level === '不及格');
+    if (dateFrom) data = data.filter(d => d.exam_date >= dateFrom);
+    if (dateTo) data = data.filter(d => d.exam_date <= dateTo);
+
+    data.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+
+    const tbody = document.getElementById('records-tbody');
+    const empty = document.getElementById('records-empty');
+
+    if (!data.length) {
+        tbody.innerHTML = '';
+        empty.style.display = 'block';
+        return;
+    }
+    empty.style.display = 'none';
+
+    tbody.innerHTML = data.map(d => {
+        const tagCls = d.level === '优秀' ? 'tag-excellent' : d.level === '不及格' ? 'tag-fail' : d.level === '良好' ? 'tag-good' : 'tag-pass';
+        const passTag = d.level === '不及格' ? '<span class="tag tag-fail">未通过</span>' : '<span class="tag tag-pass">通过</span>';
+
+        const dimColors = (score, max) => {
+            const pct = score / max;
+            if (pct >= 0.9) return 'var(--excellent)';
+            if (pct >= 0.7) return 'var(--primary)';
+            if (pct >= 0.5) return 'var(--warning)';
+            return 'var(--danger)';
+        };
+
+        const scoreCell = (score, max) => `<div class="score-bar"><div class="bar"><div class="fill" style="width:${score/max*100}%;background:${dimColors(score,max)}"></div></div>${score}</div>`;
+
+        return `<tr>
+            <td style="font-weight:600">${d.examinee_name}</td>
+            <td>${d.team}</td><td>${d.judge_name}</td><td>${d.exam_date}</td>
+            <td>${scoreCell(d.opening_score, 10)}</td>
+            <td>${scoreCell(d.structure_score, 15)}</td>
+            <td>${scoreCell(d.product_score, 25)}</td>
+            <td>${scoreCell(d.clinical_score, 25)}</td>
+            <td>${scoreCell(d.value_action_score, 25)}</td>
+            <td style="font-weight:800;font-size:15px">${d.total_score}</td>
+            <td><span class="tag ${tagCls}">${d.level}</span></td>
+            <td>${passTag}</td>
+            <td><button class="toolbar-btn outline" style="padding:4px 10px;font-size:12px;" onclick="viewDetail('${d.id}')">详情</button> <button class="toolbar-btn danger" style="padding:4px 10px;font-size:12px;" onclick="deleteRecord('${d.id}')">删除</button></td>
+        </tr>`;
+    }).join('');
+}
+
+async function deleteRecord(id) {
+    if (!confirm('确定删除该评分记录？此操作不可恢复。')) return;
+    let data = getData();
+    data = data.filter(d => d.id !== id);
+    _cachedData = data;
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    showToast('已删除');
+    renderRecords();
+}
+
+async function clearAllData() {
+    if (!confirm('⚠️ 确定清空所有评分数据？此操作不可恢复！')) return;
+    if (!confirm('再次确认：清空所有数据？')) return;
+    _cachedData = [];
+    localStorage.setItem(STORAGE_KEY, '[]');
+    showToast('已清空所有数据');
+    renderRecords();
+}
+
+// ============ Ranking ============
+async function renderRanking() {
+    let data = await fetchData();
+    const region = document.getElementById('rank-region').value;
+    const date = document.getElementById('rank-date').value;
+    if (region) data = data.filter(d => d.team === region);
+    if (date) data = data.filter(d => d.exam_date === date);
+    data.sort((a, b) => b.total_score - a.total_score);
+
+    const tbody = document.getElementById('ranking-tbody');
+    tbody.innerHTML = data.map((d, i) => {
+        const rank = i + 1;
+        const medal = rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : rank;
+        const tagCls = d.level === '优秀' ? 'tag-excellent' : d.level === '不及格' ? 'tag-fail' : d.level === '良好' ? 'tag-good' : 'tag-pass';
+        const passTag = d.level === '不及格' ? '<span class="tag tag-fail">未通过</span>' : '<span class="tag tag-pass">通过</span>';
+        return `<tr>
+            <td style="font-weight:800;font-size:16px">${medal}</td>
+            <td style="font-weight:600">${d.examinee_name}</td><td>${d.team}</td><td>${d.judge_name}</td>
+            <td style="font-weight:800;font-size:16px;color:${d.total_score>=95?'var(--excellent)':d.total_score<80?'var(--danger)':'var(--primary)'}">${d.total_score}</td>
+            <td><span class="tag ${tagCls}">${d.level}</span></td>
+            <td>${passTag}</td><td>${d.exam_date}</td>
+        </tr>`;
+    }).join('');
+}
+
+// ============ Regions ============
+async function renderRegions() {
+    const data = await fetchData();
+    const regionClasses = { '华东区': 'huadong', '华西区': 'huaxi', '华南区': 'huanan', '华北区': 'huabei' };
+
+    const regionStats = REGIONS.map(r => {
+        const rd = data.filter(d => d.team === r);
+        const avg = rd.length ? (rd.reduce((s,d) => s + d.total_score, 0) / rd.length).toFixed(1) : '-';
+        const passCount = rd.filter(d => d.level !== '不及格').length;
+        const passRate = rd.length ? (passCount / rd.length * 100).toFixed(1) : '-';
+        return { name: r, count: rd.length, avg, passRate, cls: regionClasses[r] };
+    });
+
+    document.getElementById('region-cards').innerHTML = regionStats.map(r => `
+        <div class="region-card ${r.cls}">
+            <div class="region-name">${r.name}</div>
+            <div class="region-avg">${r.avg}</div>
+            <div class="region-count">${r.count} 人参考</div>
+            <div class="region-rate" style="color:${parseFloat(r.passRate)>=80?'var(--success)':'var(--danger)'}">通过率 ${r.passRate}%</div>
+        </div>
+    `).join('');
+
+    // Region dim averages
+    const dimAvgs = REGIONS.map(r => {
+        const rd = data.filter(d => d.team === r);
+        return {
+            name: r,
+            dims: DIMS.map(dim => ({
+                label: dim.label,
+                avg: rd.length ? (rd.reduce((s,d) => s + d[dim.key], 0) / rd.length).toFixed(1) : 0,
+                max: dim.max
+            }))
+        };
+    });
+
+    const colors = { '华东区': '#2563eb', '华西区': '#16a34a', '华南区': '#d97706', '华北区': '#7c3aed' };
+    document.getElementById('chart-region-dims').innerHTML = DIMS.map(dim => {
+        return `<div class="bar-row"><div class="name">${dim.label}</div><div class="track" style="display:flex;gap:2px">${REGIONS.map(r => {
+            const avg = dimAvgs.find(d => d.name === r).dims.find(d => d.label === dim.label).avg;
+            const pct = (avg / dim.max * 100).toFixed(0);
+            return `<div style="width:${pct}%;height:100%;background:${colors[r]};border-radius:4px;min-width:2px;" title="${r}: ${avg}/${dim.max}"></div>`;
+        }).join('')}</div><div class="count">${dim.max}</div></div>`;
+    }).join('');
+
+    // Region pass rate bars
+    document.getElementById('chart-region-pass').innerHTML = regionStats.map(r => {
+        const rate = parseFloat(r.passRate) || 0;
+        const color = rate >= 80 ? 'var(--success)' : rate >= 60 ? 'var(--warning)' : 'var(--danger)';
+        return `<div class="bar-row"><div class="name">${r.name}</div><div class="track"><div class="fill" style="width:${rate}%;background:${color}">${rate}%</div></div><div class="count">${r.count}人</div></div>`;
+    }).join('');
+}
+
+// ============ Analysis ============
+async function renderAnalysis() {
+    const data = await fetchData();
+    const total = data.length || 1;
+
+    const dimStats = DIMS.map(dim => {
+        const scores = data.map(d => d[dim.key]);
+        const avg = scores.length ? (scores.reduce((a,b) => a+b, 0) / scores.length).toFixed(1) : 0;
+        const max = Math.max(...scores, 0);
+        const min = Math.min(...scores, 0);
+        const failThreshold = dim.max * 0.6; // 60% as rough fail line
+        const failCount = scores.filter(s => s < failThreshold).length;
+        const failRate = (failCount / total * 100).toFixed(1);
+        const rate = (avg / dim.max * 100).toFixed(1);
+        return { ...dim, avg, max, min, failCount, failRate, rate };
+    });
+
+    document.getElementById('dim-stats').innerHTML = dimStats.map(d => `
+        <div class="stat-card">
+            <div class="label">${d.label}（满分${d.max}）</div>
+            <div class="value" style="color:${parseFloat(d.rate)>=80?'var(--success)':parseFloat(d.rate)>=60?'var(--primary)':'var(--danger)'}">${d.avg}</div>
+            <div class="sub">得分率 ${d.rate}% · 最高 ${d.max} · 最低 ${d.min}</div>
+        </div>
+    `).join('');
+
+    const dimColors = ['#2563eb', '#16a34a', '#d97706', '#7c3aed', '#dc2626'];
+    document.getElementById('chart-dim-rate').innerHTML = dimStats.map((d, i) => {
+        return `<div class="bar-row"><div class="name">${d.label}</div><div class="track"><div class="fill" style="width:${d.rate}%;background:${dimColors[i]}">${d.rate}%</div></div><div class="count">${d.avg}/${d.max}</div></div>`;
+    }).join('');
+
+    document.getElementById('chart-dim-fail').innerHTML = dimStats.map((d, i) => {
+        const color = parseFloat(d.failRate) > 30 ? 'var(--danger)' : parseFloat(d.failRate) > 15 ? 'var(--warning)' : 'var(--success)';
+        return `<div class="bar-row"><div class="name">${d.label}</div><div class="track"><div class="fill" style="width:${d.failRate}%;background:${color}">${d.failRate}%</div></div><div class="count">${d.failCount}人</div></div>`;
+    }).join('');
+}
+
+// ============ Export ============
+async function renderExport() {
+    const data = await fetchData();
+    document.getElementById('export-preview').innerHTML = `
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-top:12px;">
+            <div class="stat-card"><div class="label">总记录数</div><div class="value" style="font-size:24px">${data.length}</div></div>
+            <div class="stat-card"><div class="label">大区覆盖</div><div class="value" style="font-size:24px">${new Set(data.map(d=>d.team)).size}</div></div>
+            <div class="stat-card"><div class="label">评委人数</div><div class="value" style="font-size:24px">${new Set(data.map(d=>d.judge_name)).size}</div></div>
+            <div class="stat-card"><div class="label">考核日期</div><div class="value" style="font-size:24px">${new Set(data.map(d=>d.exam_date)).size}天</div></div>
+        </div>
+    `;
+}
+
+async function exportCSV() {
+    const data = await fetchData();
+    if (!data.length) { showToast('暂无数据可导出'); return; }
+
+    const headers = ['ID', '被考核人', '大区', '评委', '考核日期', '演讲用时(分钟)', '是否超时',
+        '开场引入', '内容组织', '产品知识', '临床专业', '价值传递', '总分', '等级', '是否通过', '评语', '提交时间'];
+    const rows = data.map(d => [
+        d.id, d.examinee_name, d.team, d.judge_name, d.exam_date, d.duration_minutes,
+        d.is_overtime ? '是' : '否',
+        d.opening_score, d.structure_score, d.product_score, d.clinical_score, d.value_action_score,
+        d.total_score, d.level, d.pass_status, `"${(d.comment||'').replace(/"/g,'""')}"`, d.created_at
+    ]);
+
+    const bom = '\uFEFF';
+    const csv = bom + [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+    downloadFile(csv, '悦见评分数据_' + new Date().toISOString().slice(0,10) + '.csv', 'text/csv;charset=utf-8');
+    showToast('CSV 导出成功');
+}
+
+async function exportJSON() {
+    const data = await fetchData();
+    if (!data.length) { showToast('暂无数据可导出'); return; }
+    const json = JSON.stringify(data, null, 2);
+    downloadFile(json, '悦见评分数据_' + new Date().toISOString().slice(0,10) + '.json', 'application/json');
+    showToast('JSON 导出成功');
+}
+
+function downloadFile(content, filename, type) {
+    const blob = new Blob([content], { type });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = filename;
+    document.body.appendChild(a); a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+}
+
+// ============ Import ============
+function importJSON() {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.json';
+    input.onchange = function(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = function(ev) {
+            try {
+                const imported = JSON.parse(ev.target.result);
+                if (!Array.isArray(imported)) { showToast('格式错误：需要 JSON 数组'); return; }
+                const local = getData();
+                const localIds = new Set(local.map(r => r.id));
+                let added = 0;
+                imported.forEach(r => {
+                    if (r.id && !localIds.has(r.id)) { local.push(r); added++; }
+                });
+                _cachedData = local;
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(local));
+                showToast('导入成功：新增 ' + added + ' 条，共 ' + local.length + ' 条');
+                renderDashboard();
+            } catch(err) {
+                showToast('导入失败：' + err.message);
+            }
+        };
+        reader.readAsText(file);
+    };
+    input.click();
+}
+
+// ============ Detail Modal ============
+function viewDetail(id) {
+    const data = _cachedData || getData();
+    const d = data.find(r => r.id === id);
+    if (!d) return;
+
+    const tagCls = d.level === '优秀' ? 'tag-excellent' : d.level === '不及格' ? 'tag-fail' : d.level === '良好' ? 'tag-good' : 'tag-pass';
+    const dimColors = (score, max) => {
+        const pct = score / max;
+        if (pct >= 0.9) return 'var(--excellent)';
+        if (pct >= 0.7) return 'var(--primary)';
+        if (pct >= 0.5) return 'var(--warning)';
+        return 'var(--danger)';
+    };
+
+    document.getElementById('modal-content').innerHTML = `
+        <div style="text-align:center;padding:16px;background:${d.level==='不及格'?'linear-gradient(135deg,#dc2626,#ef4444)':d.level==='优秀'?'linear-gradient(135deg,#7c3aed,#a78bfa)':'linear-gradient(135deg,var(--primary),#3b82f6)'};color:#fff;border-radius:12px;margin-bottom:16px;">
+            <div style="font-size:48px;font-weight:800">${d.total_score}</div>
+            <div style="font-size:18px;font-weight:600">${d.level}</div>
+            <div style="font-size:13px;opacity:0.9;margin-top:4px">${d.pass_status}</div>
+        </div>
+        <div class="detail-grid">
+            <div class="detail-item"><div class="dl">被考核人</div><div class="dv">${d.examinee_name}</div></div>
+            <div class="detail-item"><div class="dl">大区</div><div class="dv">${d.team}</div></div>
+            <div class="detail-item"><div class="dl">评委</div><div class="dv">${d.judge_name}</div></div>
+            <div class="detail-item"><div class="dl">考核日期</div><div class="dv">${d.exam_date}</div></div>
+            <div class="detail-item"><div class="dl">演讲用时</div><div class="dv">${d.duration_minutes} 分钟${d.is_overtime?' (超时)':''}</div></div>
+            <div class="detail-item"><div class="dl">提交时间</div><div class="dv">${new Date(d.created_at).toLocaleString('zh-CN')}</div></div>
+        </div>
+        <h4 style="margin:16px 0 8px;font-size:14px;">各项得分</h4>
+        <div class="detail-grid">
+            ${DIMS.map(dim => {
+                const score = d[dim.key];
+                const color = dimColors(score, dim.max);
+                return `<div class="detail-item"><div class="dl">${dim.label}</div><div class="dv" style="color:${color}">${score} <span style="font-size:12px;color:var(--text-secondary)">/ ${dim.max}</span></div></div>`;
+            }).join('')}
+        </div>
+        ${d.comment ? `<h4 style="margin:16px 0 8px;font-size:14px;">评委评语</h4><div style="background:#f8fafc;padding:12px;border-radius:8px;font-size:13px;line-height:1.6;">${d.comment}</div>` : ''}
+        ${d.is_overtime ? '<div style="margin-top:12px;background:var(--danger-light);padding:10px;border-radius:8px;font-size:13px;color:var(--danger);">⚠️ 演讲超过15分钟，内容组织与时间控制项按规则计0分</div>' : ''}
+    `;
+    document.getElementById('detail-modal').classList.add('show');
+}
+
+function closeModal() {
+    document.getElementById('detail-modal').classList.remove('show');
+}
+
+document.getElementById('detail-modal').addEventListener('click', function(e) {
+    if (e.target === this) closeModal();
+});
+
+// ============ Toast ============
+function showToast(msg) {
+    const el = document.getElementById('toast');
+    el.textContent = msg;
+    el.classList.add('show');
+    setTimeout(() => el.classList.remove('show'), 2500);
+}
+
+// ============ Init ============
+(async () => { await renderDashboard(); })();
+</script>
+</body>
+</html>

@@ -1,0 +1,2528 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>悦见销售科室会评分系统</title>
+    <style>
+        :root {
+            --primary: #1a56db;
+            --primary-light: #e8eefb;
+            --success: #16a34a;
+            --danger: #dc2626;
+            --danger-light: #fef2f2;
+            --warning: #d97706;
+            --excellent: #7c3aed;
+            --excellent-light: #f3f0ff;
+            --bg: #f0f2f5;
+            --card: #ffffff;
+            --text: #1f2937;
+            --text-secondary: #6b7280;
+            --border: #e5e7eb;
+            --radius: 12px;
+            --shadow: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.06);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "PingFang SC", "Microsoft YaHei", sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            -webkit-font-smoothing: antialiased;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        /* Page System */
+        .page { display: none; min-height: 100vh; padding-bottom: 24px; }
+        .page.active { display: block; animation: fadeIn 0.25s ease; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Header */
+        .header {
+            background: linear-gradient(135deg, var(--primary), #3b82f6);
+            color: #fff;
+            padding: 20px 16px 16px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        .header h1 { font-size: 18px; font-weight: 600; }
+        .header .back-btn {
+            background: rgba(255,255,255,0.2);
+            border: none;
+            color: #fff;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 13px;
+            cursor: pointer;
+            margin-bottom: 8px;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .header .back-btn:active { background: rgba(255,255,255,0.35); }
+
+        /* Home */
+        .home-hero {
+            background: linear-gradient(135deg, var(--primary), #3b82f6, #6366f1);
+            color: #fff;
+            padding: 48px 24px 40px;
+            text-align: center;
+        }
+        .home-hero .logo { font-size: 40px; margin-bottom: 12px; }
+        .home-hero h1 { font-size: 24px; font-weight: 700; margin-bottom: 8px; }
+        .home-hero p { font-size: 14px; opacity: 0.85; }
+
+        .home-actions { padding: 20px 16px; }
+        .home-btn {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            width: 100%;
+            padding: 18px 20px;
+            background: var(--card);
+            border: none;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            cursor: pointer;
+            margin-bottom: 12px;
+            text-align: left;
+            transition: transform 0.1s;
+        }
+        .home-btn:active { transform: scale(0.98); }
+        .home-btn .icon {
+            width: 48px; height: 48px;
+            border-radius: 12px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 22px; flex-shrink: 0;
+        }
+        .home-btn .icon.blue { background: #dbeafe; }
+        .home-btn .icon.green { background: #dcfce7; }
+        .home-btn .icon.purple { background: #ede9fe; }
+        .home-btn .info h3 { font-size: 16px; font-weight: 600; color: var(--text); }
+        .home-btn .info p { font-size: 13px; color: var(--text-secondary); margin-top: 2px; }
+
+        /* Cards */
+        .card {
+            background: var(--card);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            padding: 16px;
+            margin: 12px 16px;
+        }
+        .card-title {
+            font-size: 15px;
+            font-weight: 600;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        /* Form */
+        .form-group { margin-bottom: 14px; }
+        .form-group label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-bottom: 6px;
+        }
+        .form-group label .required { color: var(--danger); }
+        .form-input {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1.5px solid var(--border);
+            border-radius: 8px;
+            font-size: 15px;
+            background: #fafafa;
+            color: var(--text);
+            transition: border-color 0.2s;
+            -webkit-appearance: none;
+        }
+        .form-input:focus {
+            outline: none;
+            border-color: var(--primary);
+            background: #fff;
+        }
+
+        /* Score Item */
+        .score-item {
+            background: var(--card);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            padding: 14px 16px;
+            margin: 10px 16px;
+        }
+        .score-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        .score-header .name {
+            font-size: 14px;
+            font-weight: 600;
+        }
+        .score-header .max-score {
+            font-size: 12px;
+            color: var(--text-secondary);
+            background: var(--primary-light);
+            padding: 2px 8px;
+            border-radius: 10px;
+        }
+        .criteria-btn {
+            background: none;
+            border: 1px solid var(--primary);
+            color: var(--primary);
+            padding: 3px 10px;
+            border-radius: 14px;
+            font-size: 11px;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+        .criteria-btn:active { background: var(--primary-light); }
+        .score-input-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .score-slider {
+            flex: 1;
+            -webkit-appearance: none;
+            height: 6px;
+            border-radius: 3px;
+            background: #e5e7eb;
+            outline: none;
+        }
+        .score-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 24px; height: 24px;
+            border-radius: 50%;
+            background: var(--primary);
+            cursor: pointer;
+            box-shadow: 0 2px 6px rgba(26,86,219,0.3);
+        }
+        .score-number {
+            width: 60px;
+            text-align: center;
+            padding: 8px 4px;
+            border: 1.5px solid var(--border);
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--primary);
+            background: var(--primary-light);
+        }
+        .score-number:disabled {
+            background: var(--danger-light);
+            color: var(--danger);
+            border-color: var(--danger);
+        }
+        .overtime-tag {
+            display: inline-block;
+            background: var(--danger-light);
+            color: var(--danger);
+            font-size: 11px;
+            font-weight: 600;
+            padding: 2px 8px;
+            border-radius: 10px;
+            margin-top: 4px;
+        }
+
+        /* Total Bar */
+        .total-bar {
+            position: sticky;
+            bottom: 0;
+            background: var(--card);
+            border-top: 1px solid var(--border);
+            padding: 14px 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 50;
+            box-shadow: 0 -2px 8px rgba(0,0,0,0.06);
+        }
+        .total-bar .left .label { font-size: 12px; color: var(--text-secondary); }
+        .total-bar .left .score { font-size: 28px; font-weight: 700; color: var(--primary); }
+        .total-bar .right .level-badge {
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 600;
+        }
+        .level-fail { background: var(--danger-light); color: var(--danger); }
+        .level-pass { background: #dcfce7; color: var(--success); }
+        .level-good { background: #dbeafe; color: var(--primary); }
+        .level-excellent { background: var(--excellent-light); color: var(--excellent); }
+
+        /* Submit Button */
+        .submit-btn {
+            width: calc(100% - 32px);
+            margin: 16px;
+            padding: 14px;
+            background: linear-gradient(135deg, var(--primary), #3b82f6);
+            color: #fff;
+            border: none;
+            border-radius: var(--radius);
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(26,86,219,0.3);
+        }
+        .submit-btn:active { transform: scale(0.98); }
+
+        /* Result Page */
+        .result-score {
+            text-align: center;
+            padding: 28px 16px;
+            background: linear-gradient(135deg, var(--primary), #3b82f6);
+            color: #fff;
+            border-radius: var(--radius);
+            margin: 16px;
+        }
+        .result-score .number { font-size: 56px; font-weight: 800; }
+        .result-score .level { font-size: 20px; margin-top: 4px; font-weight: 600; }
+        .result-score .status { font-size: 14px; margin-top: 6px; opacity: 0.9; }
+
+        .result-detail { margin: 0 16px; }
+        .result-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid var(--border);
+        }
+        .result-row:last-child { border-bottom: none; }
+        .result-row .name { font-size: 14px; color: var(--text-secondary); }
+        .result-row .val { font-size: 15px; font-weight: 600; }
+        .result-row .val.zero { color: var(--danger); }
+        .result-row .val.high { color: var(--excellent); }
+
+        .overtime-warning {
+            background: var(--danger-light);
+            border: 1px solid #fecaca;
+            border-radius: 8px;
+            padding: 10px 14px;
+            margin: 12px 16px;
+            font-size: 13px;
+            color: var(--danger);
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+        }
+
+        .comment-box {
+            background: #f8fafc;
+            border-radius: 8px;
+            padding: 14px;
+            margin: 12px 16px;
+            font-size: 14px;
+            line-height: 1.6;
+            color: var(--text);
+        }
+        .comment-box .label {
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-bottom: 6px;
+            font-weight: 600;
+        }
+
+        .ai-comment-btn {
+            background: linear-gradient(135deg, #7c3aed, #a78bfa);
+            color: #fff;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 13px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            margin: 4px 16px 12px;
+        }
+        .ai-comment-btn:active { opacity: 0.85; }
+
+        /* Ranking */
+        .filter-bar {
+            display: flex;
+            gap: 8px;
+            padding: 12px 16px;
+            overflow-x: auto;
+        }
+        .filter-bar select, .filter-bar input {
+            padding: 8px 12px;
+            border: 1.5px solid var(--border);
+            border-radius: 8px;
+            font-size: 13px;
+            background: #fff;
+            min-width: 120px;
+        }
+
+        .rank-table {
+            margin: 0 16px;
+            border-radius: var(--radius);
+            overflow: hidden;
+            box-shadow: var(--shadow);
+            background: var(--card);
+        }
+        .rank-header, .rank-row {
+            display: grid;
+            grid-template-columns: 40px 1fr 70px 56px 56px;
+            padding: 12px 10px;
+            align-items: center;
+            font-size: 13px;
+        }
+        .rank-header {
+            background: var(--primary);
+            color: #fff;
+            font-weight: 600;
+            font-size: 12px;
+        }
+        .rank-row { border-bottom: 1px solid var(--border); }
+        .rank-row:last-child { border-bottom: none; }
+        .rank-row:active { background: #f8fafc; }
+        .rank-num {
+            width: 26px; height: 26px;
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-weight: 700; font-size: 12px;
+            background: #f3f4f6; color: var(--text-secondary);
+        }
+        .rank-num.top1 { background: #fbbf24; color: #fff; }
+        .rank-num.top2 { background: #9ca3af; color: #fff; }
+        .rank-num.top3 { background: #cd7f32; color: #fff; }
+        .rank-row .name { font-weight: 600; font-size: 13px; }
+        .rank-row .team { color: var(--text-secondary); font-size: 11px; }
+        .pass-tag { font-size: 11px; font-weight: 600; padding: 2px 6px; border-radius: 4px; }
+        .pass-tag.yes { background: #dcfce7; color: var(--success); }
+        .pass-tag.no { background: var(--danger-light); color: var(--danger); }
+
+        .empty-state {
+            text-align: center;
+            padding: 48px 24px;
+            color: var(--text-secondary);
+        }
+        .empty-state .icon { font-size: 48px; margin-bottom: 12px; }
+
+        /* History */
+        .history-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 14px 16px;
+            background: var(--card);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            margin: 8px 16px;
+            cursor: pointer;
+        }
+        .history-item:active { background: #f8fafc; }
+        .history-item .left .name { font-weight: 600; font-size: 15px; }
+        .history-item .left .meta { font-size: 12px; color: var(--text-secondary); margin-top: 3px; }
+        .history-item .right { text-align: right; }
+        .history-item .right .score { font-size: 20px; font-weight: 700; }
+        .history-item .right .score.fail { color: var(--danger); }
+        .history-item .right .score.excellent { color: var(--excellent); }
+
+        /* Detail */
+        .detail-header {
+            text-align: center;
+            padding: 24px 16px 20px;
+            background: linear-gradient(135deg, var(--primary), #3b82f6);
+            color: #fff;
+        }
+        .detail-header .score { font-size: 48px; font-weight: 800; }
+        .detail-header .level { font-size: 18px; font-weight: 600; margin-top: 4px; }
+        .detail-info { padding: 14px 16px; }
+        .detail-info .row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #f3f4f6;
+            font-size: 14px;
+        }
+        .detail-info .row .label { color: var(--text-secondary); }
+
+        /* Modal */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 200;
+            align-items: flex-end;
+            justify-content: center;
+        }
+        .modal-overlay.show { display: flex; }
+        .modal-content {
+            background: #fff;
+            width: 100%;
+            max-height: 80vh;
+            border-radius: 16px 16px 0 0;
+            overflow-y: auto;
+            padding: 20px 16px 32px;
+            animation: slideUp 0.25s ease;
+        }
+        @keyframes slideUp {
+            from { transform: translateY(100%); }
+            to { transform: translateY(0); }
+        }
+        .modal-content h3 {
+            font-size: 16px;
+            margin-bottom: 14px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .modal-close {
+            background: #f3f4f6;
+            border: none;
+            width: 30px; height: 30px;
+            border-radius: 50%;
+            font-size: 16px;
+            cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .criteria-level {
+            padding: 10px 12px;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            font-size: 13px;
+            line-height: 1.5;
+        }
+        .criteria-level .range {
+            font-weight: 700;
+            display: block;
+            margin-bottom: 2px;
+        }
+        .criteria-level.excellent { background: var(--excellent-light); border-left: 3px solid var(--excellent); }
+        .criteria-level.good { background: #dbeafe; border-left: 3px solid var(--primary); }
+        .criteria-level.pass { background: #dcfce7; border-left: 3px solid var(--success); }
+        .criteria-level.fail { background: var(--danger-light); border-left: 3px solid var(--danger); }
+
+        /* Confirm Modal */
+        .confirm-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 300;
+            align-items: center;
+            justify-content: center;
+        }
+        .confirm-overlay.show { display: flex; }
+        .confirm-box {
+            background: #fff;
+            border-radius: 16px;
+            padding: 24px;
+            width: calc(100% - 48px);
+            max-width: 360px;
+            text-align: center;
+        }
+        .confirm-box h3 { margin-bottom: 10px; font-size: 17px; }
+        .confirm-box p { font-size: 14px; color: var(--text-secondary); margin-bottom: 20px; }
+        .confirm-actions { display: flex; gap: 10px; }
+        .confirm-actions button {
+            flex: 1;
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+        }
+        .btn-cancel { background: #f3f4f6; color: var(--text); }
+        .btn-confirm { background: var(--primary); color: #fff; }
+
+        /* Toast */
+        .toast {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0,0,0,0.75);
+            color: #fff;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 14px;
+            z-index: 400;
+            opacity: 0;
+            transition: opacity 0.3s;
+            pointer-events: none;
+        }
+        .toast.show { opacity: 1; }
+
+        /* Score bar visual */
+        .score-bar-bg {
+            height: 4px;
+            background: #e5e7eb;
+            border-radius: 2px;
+            margin-top: 6px;
+            overflow: hidden;
+        }
+        .score-bar-fill {
+            height: 100%;
+            border-radius: 2px;
+            background: var(--primary);
+            transition: width 0.3s ease;
+        }
+
+        /* Recording */
+        .recorder-card {
+            background: var(--card);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            padding: 16px;
+            margin: 12px 16px;
+        }
+        .recorder-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .rec-btn {
+            width: 56px; height: 56px;
+            border-radius: 50%;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            transition: all 0.2s;
+            flex-shrink: 0;
+        }
+        .rec-btn.idle { background: var(--danger); color: #fff; box-shadow: 0 2px 8px rgba(220,38,38,0.3); }
+        .rec-btn.idle:active { transform: scale(0.92); }
+        .rec-btn.recording { background: var(--danger-light); color: var(--danger); animation: recPulse 1.2s ease-in-out infinite; }
+        @keyframes recPulse {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(220,38,38,0.4); }
+            50% { box-shadow: 0 0 0 12px rgba(220,38,38,0); }
+        }
+        .rec-btn.done { background: var(--primary-light); color: var(--primary); }
+        .rec-btn.pause-btn { background: #fff3e0; color: #e65100; width: 44px; height: 44px; font-size: 18px; }
+        .rec-btn.pause-btn:active { transform: scale(0.92); }
+        .rec-btn.resume-btn { background: #e8f5e9; color: #2e7d32; width: 44px; height: 44px; font-size: 18px; animation: resumePulse 1.5s ease-in-out infinite; }
+        @keyframes resumePulse {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(46,125,50,0.4); }
+            50% { box-shadow: 0 0 0 10px rgba(46,125,50,0); }
+        }
+        .status.rec-paused { color: #e65100; font-weight: 600; }
+        .rec-info { flex: 1; min-width: 0; }
+        .rec-info .status { font-size: 14px; font-weight: 600; }
+        .rec-info .status.rec-active { color: var(--danger); }
+        .rec-info .status.rec-done { color: var(--success); }
+        .rec-info .hint { font-size: 12px; color: var(--text-secondary); margin-top: 2px; }
+        .rec-timer {
+            font-size: 22px; font-weight: 700; color: var(--text);
+            font-variant-numeric: tabular-nums;
+            flex-shrink: 0;
+        }
+        .rec-timer.overtime { color: var(--danger); }
+
+        .transcript-box {
+            margin-top: 12px;
+            background: #f8fafc;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 12px;
+            max-height: 200px;
+            overflow-y: auto;
+            font-size: 13px;
+            line-height: 1.6;
+            color: var(--text);
+            display: none;
+        }
+        .transcript-box.show { display: block; }
+        .transcript-box .label {
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-bottom: 6px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .transcript-box .label button {
+            background: none;
+            border: none;
+            color: var(--primary);
+            font-size: 11px;
+            cursor: pointer;
+            text-decoration: underline;
+        }
+        .transcript-box .text { white-space: pre-wrap; word-break: break-all; }
+        .transcript-box .placeholder { color: var(--text-secondary); font-style: italic; }
+
+        .rec-actions {
+            display: flex; gap: 8px; margin-top: 10px;
+        }
+        .rec-actions button {
+            flex: 1; padding: 8px 0; border-radius: 8px; font-size: 13px;
+            font-weight: 600; cursor: pointer; border: none;
+        }
+        .rec-actions .btn-fill { background: var(--primary); color: #fff; }
+        .rec-actions .btn-outline { background: #fff; color: var(--danger); border: 1.5px solid var(--danger) !important; }
+        .rec-actions .btn-disable { background: #f3f4f6; color: var(--text-secondary); cursor: not-allowed; }
+
+        /* AI Scoring */
+        .ai-score-card {
+            background: linear-gradient(135deg, #f3f0ff, #ede9fe);
+            border: 1.5px solid #c4b5fd;
+            border-radius: var(--radius);
+            padding: 16px;
+            margin: 12px 16px;
+            display: none;
+        }
+        .ai-score-card.show { display: block; animation: fadeIn 0.3s ease; }
+        .ai-score-card .title {
+            font-size: 15px; font-weight: 700; color: var(--excellent);
+            display: flex; align-items: center; gap: 6px; margin-bottom: 12px;
+        }
+        .ai-score-btn {
+            width: 100%; padding: 12px;
+            background: linear-gradient(135deg, #7c3aed, #a78bfa);
+            color: #fff; border: none; border-radius: 8px;
+            font-size: 14px; font-weight: 600; cursor: pointer;
+            display: flex; align-items: center; justify-content: center; gap: 6px;
+        }
+        .ai-score-btn:active { opacity: 0.85; }
+        .ai-score-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .ai-score-btn .spinner {
+            display: inline-block; width: 16px; height: 16px;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-top-color: #fff; border-radius: 50%;
+            animation: spin 0.6s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .ai-result-grid {
+            display: grid; grid-template-columns: 1fr 1fr;
+            gap: 8px; margin-top: 12px;
+        }
+        .ai-result-item {
+            background: #fff; border-radius: 8px; padding: 10px 12px;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .ai-result-item .dim { font-size: 12px; color: var(--text-secondary); }
+        .ai-result-item .val { font-size: 16px; font-weight: 700; color: var(--excellent); }
+        .ai-result-item.full { grid-column: 1 / -1; }
+        .ai-result-item .reason {
+            font-size: 11px; color: var(--text-secondary); margin-top: 4px; line-height: 1.4;
+        }
+        .ai-apply-btn {
+            width: 100%; margin-top: 10px; padding: 10px;
+            background: var(--excellent); color: #fff; border: none; border-radius: 8px;
+            font-size: 13px; font-weight: 600; cursor: pointer;
+        }
+        .ai-apply-btn:active { opacity: 0.85; }
+        .ai-disclaimer {
+            font-size: 11px; color: var(--text-secondary); margin-top: 8px;
+            text-align: center; line-height: 1.4;
+        }
+
+        .no-speech-tip {
+            background: #fff7ed;
+            border: 1px solid #fed7aa;
+            border-radius: 8px;
+            padding: 10px 14px;
+            margin-top: 10px;
+            font-size: 12px;
+            color: #c2410c;
+            display: none;
+        }
+        .no-speech-tip.show { display: block; }
+
+        /* Region Radio */
+        .region-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+        .region-option {
+            display: flex; align-items: center; justify-content: center;
+            padding: 10px 8px;
+            border: 1.5px solid var(--border);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            background: #fafafa;
+            position: relative;
+        }
+        .region-option:active { transform: scale(0.97); }
+        .region-option input { display: none; }
+        .region-label { font-size: 14px; font-weight: 600; color: var(--text-secondary); }
+        .region-option input:checked + .region-label { color: var(--primary); }
+        .region-option:has(input:checked) {
+            border-color: var(--primary);
+            background: var(--primary-light);
+            box-shadow: 0 0 0 1px var(--primary);
+        }
+
+        /* Mobile fine-tuning */
+        @media (max-width: 400px) {
+            .header h1 { font-size: 16px; }
+            .home-hero h1 { font-size: 20px; }
+            .home-hero { padding: 36px 16px 32px; }
+            .rank-header, .rank-row {
+                grid-template-columns: 32px 1fr 56px 48px 48px;
+                padding: 10px 6px;
+                font-size: 12px;
+            }
+            .rank-num { width: 22px; height: 22px; font-size: 10px; }
+            .filter-bar select, .filter-bar input { min-width: 90px; font-size: 12px; padding: 6px 10px; }
+            .score-item { padding: 14px 12px; }
+            .recorder-row { gap: 8px; }
+            .rec-btn { width: 48px; height: 48px; font-size: 20px; }
+            .rec-btn.pause-btn, .rec-btn.resume-btn { width: 40px; height: 40px; font-size: 16px; }
+            .rec-info .status { font-size: 13px; }
+            .rec-timer { font-size: 18px; }
+            .region-group { gap: 6px; }
+            .region-option { padding: 8px 6px; }
+            .region-label { font-size: 13px; }
+            .criteria-btn { font-size: 11px; padding: 4px 8px; }
+            .score-slider { height: 28px; }
+            .score-number { width: 52px; font-size: 14px; padding: 6px 4px; }
+            .form-group label { font-size: 13px; }
+            .btn-submit { font-size: 15px; padding: 14px; }
+            .ai-result-grid { gap: 6px; }
+            .history-item { padding: 12px 14px; }
+        }
+
+        /* Safe area for phones with notch/home indicator */
+        @supports (padding-bottom: env(safe-area-inset-bottom)) {
+            .btn-submit { padding-bottom: calc(14px + env(safe-area-inset-bottom)); }
+        }
+    </style>
+</head>
+<body>
+
+<!-- ========== 首页 ========== -->
+<div id="page-home" class="page active">
+    <div class="home-hero">
+        <div class="logo">📋</div>
+        <h1>悦见销售科室会评分系统</h1>
+        <p>人人过关 · 公平公正 · 智能汇总</p>
+    </div>
+    <div class="home-actions">
+        <button class="home-btn" onclick="showPage('page-scoring')">
+            <div class="icon blue">✏️</div>
+            <div class="info">
+                <h3>开始评分</h3>
+                <p>对销售人员科室会演讲进行评分</p>
+            </div>
+        </button>
+        <button class="home-btn" onclick="showPage('page-ranking')">
+            <div class="icon green">🏆</div>
+            <div class="info">
+                <h3>查看排名</h3>
+                <p>所有考核人员成绩排名汇总</p>
+            </div>
+        </button>
+        <button class="home-btn" onclick="showPage('page-history')">
+            <div class="icon purple">📊</div>
+            <div class="info">
+                <h3>历史记录</h3>
+                <p>查看所有考核评分记录</p>
+            </div>
+        </button>
+    </div>
+</div>
+
+<!-- ========== 评分页 ========== -->
+<div id="page-scoring" class="page">
+    <div class="header">
+        <button class="back-btn" onclick="showPage('page-home')">← 返回</button>
+        <h1>科室会评分</h1>
+    </div>
+
+    <!-- 基本信息 -->
+    <div class="card">
+        <div class="card-title">📝 基本信息</div>
+        <div class="form-group">
+            <label><span class="required">*</span> 被考核人姓名</label>
+            <input type="text" class="form-input" id="examinee_name" placeholder="请输入姓名">
+        </div>
+        <div class="form-group">
+            <label><span class="required">*</span> 所属大区</label>
+            <div class="region-group" id="region-group">
+                <label class="region-option">
+                    <input type="radio" name="region" value="华东区">
+                    <span class="region-label">华东区</span>
+                </label>
+                <label class="region-option">
+                    <input type="radio" name="region" value="华西区">
+                    <span class="region-label">华西区</span>
+                </label>
+                <label class="region-option">
+                    <input type="radio" name="region" value="华南区">
+                    <span class="region-label">华南区</span>
+                </label>
+                <label class="region-option">
+                    <input type="radio" name="region" value="华北区">
+                    <span class="region-label">华北区</span>
+                </label>
+            </div>
+        </div>
+        <div class="form-group">
+            <label><span class="required">*</span> 考核日期</label>
+            <input type="date" class="form-input" id="exam_date">
+        </div>
+        <div class="form-group">
+            <label><span class="required">*</span> 评委姓名</label>
+            <input type="text" class="form-input" id="judge_name" placeholder="请输入评委姓名">
+        </div>
+        <div class="form-group">
+            <label><span class="required">*</span> 演讲用时（分钟）</label>
+            <input type="number" class="form-input" id="duration" placeholder="请输入分钟数" min="0" oninput="checkOvertime()">
+            <div id="overtime-alert" style="display:none; color:var(--danger); font-size:13px; margin-top:6px; font-weight:600;">
+                ⚠️ 演讲超过15分钟，内容组织与时间控制项将按规则计0分
+            </div>
+        </div>
+    </div>
+
+    <!-- 录音识别 -->
+    <div class="recorder-card">
+        <div class="card-title">🎙️ 录音 & 语音识别</div>
+        <div class="recorder-row">
+            <button class="rec-btn idle" id="rec-btn" onclick="toggleRecording()">🎙️</button>
+            <button class="rec-btn pause-btn" id="pause-btn" onclick="togglePause()" style="display:none;">⏸️</button>
+            <div class="rec-info">
+                <div class="status" id="rec-status">点击开始录音</div>
+                <div class="hint" id="rec-hint">录音将实时转文字，时长自动填入演讲用时</div>
+            </div>
+            <div class="rec-timer" id="rec-timer">00:00</div>
+        </div>
+        <div class="transcript-box" id="transcript-box">
+            <div class="label">
+                <span>📝 实时识别结果</span>
+                <button onclick="clearTranscript()">清空</button>
+            </div>
+            <div class="text" id="transcript-text"><span class="placeholder">语音识别内容将在此显示...</span></div>
+        </div>
+        <div class="no-speech-tip" id="no-speech-tip">
+            ⚠️ 当前浏览器不支持语音识别，建议使用 Chrome 浏览器。仍可使用录音计时功能。
+        </div>
+        <div class="rec-actions" id="rec-actions" style="display:none;">
+            <button class="btn-fill" onclick="fillDurationFromRec()">⏱️ 将录音时长填入演讲用时</button>
+            <button class="btn-outline" onclick="resetRecording()">重新录音</button>
+        </div>
+    </div>
+
+    <!-- AI 自动评分 -->
+    <div class="ai-score-card show" id="ai-score-card">
+        <div class="title">🤖 AI 智能评分</div>
+        <div id="ai-score-hint" style="font-size:13px;color:var(--text-secondary);margin-bottom:10px;">请先录音获取演讲内容，AI 将自动分析并评分</div>
+        <button class="ai-score-btn" id="ai-score-btn" onclick="runAIScoring()">
+            🧠 根据演讲内容自动评分
+        </button>
+        <div id="ai-score-result"></div>
+        <div class="ai-disclaimer">AI 评分为参考建议，评委可根据实际情况调整</div>
+    </div>
+
+    <!-- 评分项 -->
+    <div style="padding:0 16px; margin-top:16px;">
+        <div style="font-size:15px; font-weight:700;">🎯 评分项</div>
+    </div>
+
+    <!-- 开场引入 -->
+    <div class="score-item">
+        <div class="score-header">
+            <div>
+                <span class="name">开场引入</span>
+                <span class="max-score">满分 10 分</span>
+            </div>
+            <button class="criteria-btn" onclick="showCriteria('opening')">查看评分标准</button>
+        </div>
+        <div class="score-input-row">
+            <input type="range" class="score-slider" id="slider_opening" min="0" max="10" value="0" oninput="syncScore('opening', this.value)">
+            <input type="number" class="score-number" id="input_opening" min="0" max="10" value="0" oninput="syncScoreFromInput('opening', this.value)">
+        </div>
+        <div class="score-bar-bg"><div class="score-bar-fill" id="bar_opening" style="width:0%"></div></div>
+    </div>
+
+    <!-- 内容组织与时间控制 -->
+    <div class="score-item">
+        <div class="score-header">
+            <div>
+                <span class="name">内容组织与时间控制</span>
+                <span class="max-score">满分 15 分</span>
+            </div>
+            <button class="criteria-btn" onclick="showCriteria('structure')">查看评分标准</button>
+        </div>
+        <div id="structure-overtime-tag" style="display:none;" class="overtime-tag">⏰ 超时自动置 0 分</div>
+        <div class="score-input-row">
+            <input type="range" class="score-slider" id="slider_structure" min="0" max="15" value="0" oninput="syncScore('structure', this.value)">
+            <input type="number" class="score-number" id="input_structure" min="0" max="15" value="0" oninput="syncScoreFromInput('structure', this.value)">
+        </div>
+        <div class="score-bar-bg"><div class="score-bar-fill" id="bar_structure" style="width:0%"></div></div>
+    </div>
+
+    <!-- 产品知识掌握 -->
+    <div class="score-item">
+        <div class="score-header">
+            <div>
+                <span class="name">产品知识掌握</span>
+                <span class="max-score">满分 25 分</span>
+            </div>
+            <button class="criteria-btn" onclick="showCriteria('product')">查看评分标准</button>
+        </div>
+        <div class="score-input-row">
+            <input type="range" class="score-slider" id="slider_product" min="0" max="25" value="0" oninput="syncScore('product', this.value)">
+            <input type="number" class="score-number" id="input_product" min="0" max="25" value="0" oninput="syncScoreFromInput('product', this.value)">
+        </div>
+        <div class="score-bar-bg"><div class="score-bar-fill" id="bar_product" style="width:0%"></div></div>
+    </div>
+
+    <!-- 临床专业性水平 -->
+    <div class="score-item">
+        <div class="score-header">
+            <div>
+                <span class="name">临床专业性水平</span>
+                <span class="max-score">满分 25 分</span>
+            </div>
+            <button class="criteria-btn" onclick="showCriteria('clinical')">查看评分标准</button>
+        </div>
+        <div class="score-input-row">
+            <input type="range" class="score-slider" id="slider_clinical" min="0" max="25" value="0" oninput="syncScore('clinical', this.value)">
+            <input type="number" class="score-number" id="input_clinical" min="0" max="25" value="0" oninput="syncScoreFromInput('clinical', this.value)">
+        </div>
+        <div class="score-bar-bg"><div class="score-bar-fill" id="bar_clinical" style="width:0%"></div></div>
+    </div>
+
+    <!-- 传递价值与倡导行动 -->
+    <div class="score-item">
+        <div class="score-header">
+            <div>
+                <span class="name">传递价值与倡导行动</span>
+                <span class="max-score">满分 25 分</span>
+            </div>
+            <button class="criteria-btn" onclick="showCriteria('valueAction')">查看评分标准</button>
+        </div>
+        <div class="score-input-row">
+            <input type="range" class="score-slider" id="slider_valueAction" min="0" max="25" value="0" oninput="syncScore('valueAction', this.value)">
+            <input type="number" class="score-number" id="input_valueAction" min="0" max="25" value="0" oninput="syncScoreFromInput('valueAction', this.value)">
+        </div>
+        <div class="score-bar-bg"><div class="score-bar-fill" id="bar_valueAction" style="width:0%"></div></div>
+    </div>
+
+    <!-- 综合评语 -->
+    <div class="card" style="margin-top:4px;">
+        <div class="card-title">💬 评委综合评语</div>
+        <textarea class="form-input" id="comment" rows="3" placeholder="请输入综合评语（可选）" style="resize:vertical; min-height:80px;"></textarea>
+        <button class="ai-comment-btn" onclick="generateAIComment()">🤖 AI 辅助生成评语</button>
+    </div>
+
+    <!-- 实时总分 -->
+    <div class="total-bar">
+        <div class="left">
+            <div class="label">实时总分</div>
+            <div class="score" id="realtime-total">0</div>
+        </div>
+        <div class="right">
+            <span class="level-badge level-fail" id="realtime-level">不及格</span>
+        </div>
+    </div>
+
+    <!-- 提交 -->
+    <button class="submit-btn" onclick="previewResult()">预览并提交评分</button>
+</div>
+
+<!-- ========== 结果确认页 ========== -->
+<div id="page-result" class="page">
+    <div class="header">
+        <button class="back-btn" onclick="showPage('page-scoring')">← 返回修改</button>
+        <h1>评分结果确认</h1>
+    </div>
+
+    <div class="result-score" id="result-hero">
+        <div class="number" id="result-total">0</div>
+        <div class="level" id="result-level">不及格</div>
+        <div class="status" id="result-status">未通过，需再次考核</div>
+    </div>
+
+    <div id="result-overtime-warn" class="overtime-warning" style="display:none;">
+        <span>⚠️</span>
+        <span>演讲超过15分钟，内容组织与时间控制项按规则计0分</span>
+    </div>
+
+    <div class="card">
+        <div class="card-title">📊 各项得分</div>
+        <div class="result-detail">
+            <div class="result-row"><span class="name">开场引入</span><span class="val" id="r-opening">0/10</span></div>
+            <div class="result-row"><span class="name">内容组织与时间控制</span><span class="val" id="r-structure">0/15</span></div>
+            <div class="result-row"><span class="name">产品知识掌握</span><span class="val" id="r-product">0/25</span></div>
+            <div class="result-row"><span class="name">临床专业性水平</span><span class="val" id="r-clinical">0/25</span></div>
+            <div class="result-row"><span class="name">传递价值与倡导行动</span><span class="val" id="r-valueAction">0/25</span></div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-title">👤 考核信息</div>
+        <div class="detail-info">
+            <div class="row"><span class="label">被考核人</span><span id="r-name">-</span></div>
+            <div class="row"><span class="label">大区</span><span id="r-team">-</span></div>
+            <div class="row"><span class="label">评委</span><span id="r-judge">-</span></div>
+            <div class="row"><span class="label">考核日期</span><span id="r-date">-</span></div>
+            <div class="row"><span class="label">演讲用时</span><span id="r-duration">-</span></div>
+        </div>
+    </div>
+
+    <div class="comment-box" id="r-comment-box" style="display:none;">
+        <div class="label">评委评语</div>
+        <div id="r-comment"></div>
+    </div>
+
+    <button class="submit-btn" onclick="confirmSubmit()" style="background:linear-gradient(135deg, var(--success), #22c55e); box-shadow:0 4px 12px rgba(22,163,74,0.3);">
+        ✅ 确认提交
+    </button>
+</div>
+
+<!-- ========== 排名页 ========== -->
+<div id="page-ranking" class="page">
+    <div class="header">
+        <button class="back-btn" onclick="showPage('page-home')">← 返回</button>
+        <h1>成绩排名</h1>
+    </div>
+
+    <div class="filter-bar">
+        <input type="date" id="rank-date-filter" onchange="renderRanking()" style="flex:1;">
+        <select id="rank-team-filter" onchange="renderRanking()" style="flex:1;">
+            <option value="">全部大区</option>
+            <option value="华东区">华东区</option>
+            <option value="华西区">华西区</option>
+            <option value="华南区">华南区</option>
+            <option value="华北区">华北区</option>
+        </select>
+    </div>
+
+    <div id="ranking-list"></div>
+</div>
+
+<!-- ========== 历史记录页 ========== -->
+<div id="page-history" class="page">
+    <div class="header">
+        <button class="back-btn" onclick="showPage('page-home')">← 返回</button>
+        <h1>历史记录</h1>
+    </div>
+    <div id="history-list"></div>
+</div>
+
+<!-- ========== 历史详情页 ========== -->
+<div id="page-detail" class="page">
+    <div class="detail-header" id="detail-hero">
+        <div class="score" id="d-total">0</div>
+        <div class="level" id="d-level">-</div>
+    </div>
+    <div class="card" style="margin-top:12px;">
+        <div class="card-title">📊 评分明细</div>
+        <div class="detail-info">
+            <div class="row"><span class="label">开场引入</span><span id="d-opening">-</span></div>
+            <div class="row"><span class="label">内容组织与时间控制</span><span id="d-structure">-</span></div>
+            <div class="row"><span class="label">产品知识掌握</span><span id="d-product">-</span></div>
+            <div class="row"><span class="label">临床专业性水平</span><span id="d-clinical">-</span></div>
+            <div class="row"><span class="label">传递价值与倡导行动</span><span id="d-valueAction">-</span></div>
+        </div>
+    </div>
+    <div class="card">
+        <div class="card-title">👤 基本信息</div>
+        <div class="detail-info">
+            <div class="row"><span class="label">被考核人</span><span id="d-name">-</span></div>
+            <div class="row"><span class="label">大区</span><span id="d-team">-</span></div>
+            <div class="row"><span class="label">评委</span><span id="d-judge">-</span></div>
+            <div class="row"><span class="label">考核日期</span><span id="d-date">-</span></div>
+            <div class="row"><span class="label">演讲用时</span><span id="d-duration">-</span></div>
+            <div class="row"><span class="label">是否超时</span><span id="d-overtime">-</span></div>
+            <div class="row"><span class="label">等级</span><span id="d-level2">-</span></div>
+            <div class="row"><span class="label">是否通过</span><span id="d-pass">-</span></div>
+            <div class="row"><span class="label">提交时间</span><span id="d-created">-</span></div>
+        </div>
+    </div>
+    <div class="comment-box" id="d-comment-box" style="display:none;">
+        <div class="label">评委评语</div>
+        <div id="d-comment"></div>
+    </div>
+    <div id="d-overtime-warn" class="overtime-warning" style="display:none;">
+        <span>⚠️</span>
+        <span>演讲超过15分钟，内容组织与时间控制项按规则计0分</span>
+    </div>
+
+    <div class="comment-box" id="d-transcript-box" style="display:none;">
+        <div class="label">🎙️ 语音识别记录</div>
+        <div id="d-transcript" style="max-height:200px; overflow-y:auto;"></div>
+    </div>
+</div>
+
+<!-- ========== 评分标准 Modal ========== -->
+<div class="modal-overlay" id="criteria-modal">
+    <div class="modal-content">
+        <h3><span id="criteria-title">评分标准</span><button class="modal-close" onclick="closeCriteria()">✕</button></h3>
+        <div id="criteria-body"></div>
+    </div>
+</div>
+
+<!-- ========== 确认提交 Modal ========== -->
+<div class="confirm-overlay" id="confirm-modal">
+    <div class="confirm-box">
+        <h3>确认提交？</h3>
+        <p>提交后评分将无法修改，请确认各项评分无误。</p>
+        <div class="confirm-actions">
+            <button class="btn-cancel" onclick="closeConfirm()">再看看</button>
+            <button class="btn-confirm" onclick="doSubmit()">确认提交</button>
+        </div>
+    </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ============ 评分标准数据 ============
+const CRITERIA = {
+    opening: {
+        title: '开场引入（满分10分）',
+        levels: [
+            { range: '10分 · 优秀', desc: '结合临床痛点并融入听众熟悉的实际科室场景，引发强烈共鸣；互动自然，能瞬间抓住听众眼球。', cls: 'excellent' },
+            { range: '8-9分 · 良好', desc: '能结合当前行业/临床面临的痛点引入主题，吸引听众注意力。', cls: 'good' },
+            { range: '6-7分 · 及格', desc: '有背景、目的介绍及简单的期望说明，开场平稳。', cls: 'pass' },
+            { range: '0-5分 · 不及格', desc: '没有主题引入，直接切入产品或PPT；状态局促。', cls: 'fail' }
+        ]
+    },
+    structure: {
+        title: '内容组织与时间控制（满分15分）',
+        note: '⚠️ 特殊规则：演讲超时超过15分钟，本项直接计0分',
+        levels: [
+            { range: '14-15分 · 优秀', desc: '结合科室实际诊疗路径组织内容，逻辑环环相扣；PPT视觉化呈现佳，时间把控精准。', cls: 'excellent' },
+            { range: '12-13分 · 良好', desc: 'PPT框架清晰，模块间过渡自然，核心要点突出。', cls: 'good' },
+            { range: '9-11分 · 及格', desc: '结构基本完整，有明确主题和基本逻辑，时间控制在15分钟内。', cls: 'pass' },
+            { range: '0-8分 · 不及格', desc: '结构混乱无逻辑，主题不明确。', cls: 'fail' }
+        ]
+    },
+    product: {
+        title: '产品知识掌握（满分25分）',
+        levels: [
+            { range: '23-25分 · 优秀', desc: '讲解极具专业度，能针对竞品痛点对标阐述，结合实际场景流畅展示产品差异化优势，对答流利。', cls: 'excellent' },
+            { range: '20-22分 · 良好', desc: '讲解完整无误，对产品核心优势，如"悦见"的独特卖点，阐述清晰。', cls: 'good' },
+            { range: '15-19分 · 及格', desc: '讲解基本完整，但有少量遗漏，对主要功能和应用场景理解停留在字面，缺乏深度。', cls: 'pass' },
+            { range: '0-14分 · 不及格', desc: '出现原则性学术错误；对功能、适应症、使用流程或原理说不清，无法传递核心信息。', cls: 'fail' }
+        ]
+    },
+    clinical: {
+        title: '临床专业性水平（满分25分）',
+        levels: [
+            { range: '23-25分 · 优秀', desc: '病例讲解生动，如诊疗前后的客观指标对比，紧贴临床实际；指南及循证数据引用熟练，能解答临床医生在实际使用中的安全性、有效性顾虑。', cls: 'excellent' },
+            { range: '20-22分 · 良好', desc: '病例讲解完整，能通过病例展示产品疗效及安全性；能准确解读适应症，并引用相关诊疗指南作为背书。', cls: 'good' },
+            { range: '15-19分 · 及格', desc: '能罗列病例，但讲解生硬，未与产品优势结合；能提及适应症，但未结合权威指南或循证医学证据。', cls: 'pass' },
+            { range: '0-14分 · 不及格', desc: '产品病例/案例讲解不清晰、不真实，无法佐证观点；适应症及指南解读有误或未提及，缺乏临床说服力。', cls: 'fail' }
+        ]
+    },
+    valueAction: {
+        title: '传递价值与倡导行动（满分25分）',
+        levels: [
+            { range: '23-25分 · 优秀', desc: '能将FAB转化无缝代入医生实际诊疗场景，激发处方意愿；引导实际转化逻辑闭环；总结精辟，行动倡导具体、可行，并生动描述医生及患者获益。', cls: 'excellent' },
+            { range: '20-22分 · 良好', desc: '观点明确且有案例证据支撑；有明确的FAB（属性-作用-益处）转化；培训中明确传递行动点，并在结尾做出具体倡导。', cls: 'good' },
+            { range: '15-19分 · 及格', desc: '结合主题有明确观点；提及产品或行动建议；在演讲结束前有口头行动倡导。', cls: 'pass' },
+            { range: '0-14分 · 不及格', desc: '无病例转化导向；无行动倡导或仅有空洞口号。', cls: 'fail' }
+        ]
+    }
+};
+
+const MAX_SCORES = { opening: 10, structure: 15, product: 25, clinical: 25, valueAction: 25 };
+
+// ============ 数据存储 ============
+const STORAGE_KEY = 'yuejian_scores';
+
+function getScores() {
+    try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); }
+    catch(e) { return []; }
+}
+
+function saveScores(scores) {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(scores));
+}
+
+// ============ 页面导航 ============
+function showPage(id) {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+    window.scrollTo(0, 0);
+
+    if (id === 'page-ranking') renderRanking();
+    if (id === 'page-history') renderHistory();
+    if (id === 'page-scoring') initScoringForm();
+}
+
+// ============ 评分页逻辑 ============
+function initScoringForm() {
+    const today = new Date().toISOString().split('T')[0];
+    if (!document.getElementById('exam_date').value) {
+        document.getElementById('exam_date').value = today;
+    }
+}
+
+function getSelectedRegion() {
+    const checked = document.querySelector('input[name="region"]:checked');
+    return checked ? checked.value : '';
+}
+
+function syncScore(dim, val) {
+    val = parseInt(val) || 0;
+    const max = MAX_SCORES[dim];
+    if (val > max) val = max;
+    if (val < 0) val = 0;
+    const inputEl = document.getElementById('input_' + dim);
+    if (!inputEl.disabled) inputEl.value = val;
+    document.getElementById('slider_' + dim).value = val;
+    document.getElementById('bar_' + dim).style.width = (val / max * 100) + '%';
+    updateRealtime();
+}
+
+function syncScoreFromInput(dim, val) {
+    val = parseInt(val) || 0;
+    const max = MAX_SCORES[dim];
+    if (val > max) val = max;
+    if (val < 0) val = 0;
+    const inputEl = document.getElementById('input_' + dim);
+    const sliderEl = document.getElementById('slider_' + dim);
+    if (!inputEl.disabled) inputEl.value = val;
+    if (!sliderEl.disabled) sliderEl.value = val;
+    document.getElementById('bar_' + dim).style.width = (val / max * 100) + '%';
+    updateRealtime();
+}
+
+function checkOvertime() {
+    const dur = parseFloat(document.getElementById('duration').value) || 0;
+    const isOvertime = dur > 15;
+    document.getElementById('overtime-alert').style.display = isOvertime ? 'block' : 'none';
+    document.getElementById('structure-overtime-tag').style.display = isOvertime ? 'inline-block' : 'none';
+
+    const slider = document.getElementById('slider_structure');
+    const input = document.getElementById('input_structure');
+    if (isOvertime) {
+        slider.value = 0;
+        slider.disabled = true;
+        input.value = 0;
+        input.disabled = true;
+        document.getElementById('bar_structure').style.width = '0%';
+    } else {
+        slider.disabled = false;
+        input.disabled = false;
+    }
+    updateRealtime();
+}
+
+function getScoreValues() {
+    const dur = parseFloat(document.getElementById('duration').value) || 0;
+    const isOvertime = dur > 15;
+    return {
+        opening: parseInt(document.getElementById('input_opening').value) || 0,
+        structure: isOvertime ? 0 : (parseInt(document.getElementById('input_structure').value) || 0),
+        product: parseInt(document.getElementById('input_product').value) || 0,
+        clinical: parseInt(document.getElementById('input_clinical').value) || 0,
+        valueAction: parseInt(document.getElementById('input_valueAction').value) || 0,
+        isOvertime: isOvertime,
+        duration: dur
+    };
+}
+
+function calcTotalAndLevel(scores) {
+    const total = scores.opening + scores.structure + scores.product + scores.clinical + scores.valueAction;
+    let level, passStatus, passed;
+    if (total < 80) { level = '不及格'; passStatus = '未通过，需再次考核'; passed = false; }
+    else if (total <= 85) { level = '及格'; passStatus = '通过'; passed = true; }
+    else if (total <= 94) { level = '良好'; passStatus = '通过'; passed = true; }
+    else { level = '优秀'; passStatus = '通过'; passed = true; }
+    return { total, level, passStatus, passed };
+}
+
+function updateRealtime() {
+    const scores = getScoreValues();
+    const result = calcTotalAndLevel(scores);
+    document.getElementById('realtime-total').textContent = result.total;
+
+    const badge = document.getElementById('realtime-level');
+    badge.textContent = result.level;
+    badge.className = 'level-badge';
+    if (result.level === '不及格') badge.classList.add('level-fail');
+    else if (result.level === '及格') badge.classList.add('level-pass');
+    else if (result.level === '良好') badge.classList.add('level-good');
+    else badge.classList.add('level-excellent');
+}
+
+// ============ 评分标准 Modal ============
+function showCriteria(dim) {
+    const data = CRITERIA[dim];
+    document.getElementById('criteria-title').textContent = data.title;
+    let html = '';
+    if (data.note) {
+        html += `<div style="background:#fff7ed; border:1px solid #fed7aa; border-radius:8px; padding:10px 12px; margin-bottom:12px; font-size:13px; color:#c2410c; font-weight:600;">${data.note}</div>`;
+    }
+    data.levels.forEach(l => {
+        html += `<div class="criteria-level ${l.cls}"><span class="range">${l.range}</span>${l.desc}</div>`;
+    });
+    document.getElementById('criteria-body').innerHTML = html;
+    document.getElementById('criteria-modal').classList.add('show');
+}
+
+function closeCriteria() {
+    document.getElementById('criteria-modal').classList.remove('show');
+}
+
+// ============ AI 评语生成 ============
+function generateAIComment() {
+    const scores = getScoreValues();
+    const result = calcTotalAndLevel(scores);
+    const parts = [];
+
+    // 总体评价
+    if (result.total >= 95) parts.push('本次科室会表现优秀，各方面均达到高水准');
+    else if (result.total >= 86) parts.push('本次科室会整体表现良好');
+    else if (result.total >= 80) parts.push('本次科室会基本达标，但仍有提升空间');
+    else parts.push('本次科室会未达考核标准，需加强训练后再次考核');
+
+    // 超时
+    if (scores.isOvertime) {
+        parts.push('演讲超时，内容组织与时间控制项按规则计0分，需重点加强时间把控能力');
+    }
+
+    // 开场引入
+    if (scores.opening >= 9) parts.push('开场引入精彩，能有效吸引听众注意力并建立共鸣');
+    else if (scores.opening >= 6) parts.push('开场引入基本平稳，建议加强结合临床痛点和科室场景的能力');
+    else if (scores.opening > 0) parts.push('开场引入偏弱，建议注重主题引入和互动设计，避免直接切入产品');
+
+    // 内容组织
+    if (!scores.isOvertime) {
+        if (scores.structure >= 14) parts.push('内容组织条理清晰，时间把控精准');
+        else if (scores.structure >= 9) parts.push('内容组织基本完整，建议优化PPT框架和模块间的过渡逻辑');
+        else if (scores.structure > 0) parts.push('内容组织需加强，建议明确主题逻辑、优化内容结构');
+    }
+
+    // 产品知识
+    if (scores.product >= 23) parts.push('产品知识掌握扎实，对差异化优势阐述流利');
+    else if (scores.product >= 20) parts.push('产品知识掌握良好，核心卖点阐述清晰');
+    else if (scores.product >= 15) parts.push('产品知识基本掌握，但深度不足，建议加强对产品核心优势和竞品差异的理解');
+    else if (scores.product > 0) parts.push('产品知识掌握较弱，出现明显遗漏或错误，需系统学习产品知识');
+
+    // 临床专业
+    if (scores.clinical >= 23) parts.push('临床专业度出色，病例讲解生动且数据引用熟练');
+    else if (scores.clinical >= 20) parts.push('临床专业度良好，病例讲解完整，指南引用准确');
+    else if (scores.clinical >= 15) parts.push('临床专业性有提升空间，建议加强病例与产品优势的深度结合及指南循证引用');
+    else if (scores.clinical > 0) parts.push('临床专业性不足，病例和指南解读薄弱，需重点加强临床知识储备');
+
+    // 价值传递
+    if (scores.valueAction >= 23) parts.push('价值传递与行动倡导出色，FAB转化闭环，能有效激发处方意愿');
+    else if (scores.valueAction >= 20) parts.push('价值传递良好，FAB转化明确，行动倡导具体');
+    else if (scores.valueAction >= 15) parts.push('价值传递基本达标，建议加强FAB转化逻辑和行动倡导的具体性');
+    else if (scores.valueAction > 0) parts.push('价值传递与行动倡导偏弱，缺乏转化导向和具体行动点，需重点训练');
+
+    // 综合建议
+    const weakDims = [];
+    if (scores.opening < 6 && scores.opening > 0) weakDims.push('开场引入技巧');
+    if (scores.structure < 9 && !scores.isOvertime && scores.structure > 0) weakDims.push('内容组织与时间管理');
+    if (scores.product < 20) weakDims.push('产品知识深度');
+    if (scores.clinical < 20) weakDims.push('临床专业性');
+    if (scores.valueAction < 20) weakDims.push('价值传递与行动倡导');
+
+    if (weakDims.length > 0) {
+        parts.push(`建议后续重点加强${weakDims.join('、')}方面的训练`);
+    }
+
+    if (result.total >= 95) parts.push('继续保持优秀表现，可作为标杆分享经验');
+    else if (result.total < 80) parts.push('请认真准备后参加补考，务必在薄弱环节重点突破');
+
+    const comment = parts.join('。') + '。';
+    document.getElementById('comment').value = comment;
+    showToast('AI 评语已生成');
+}
+
+// ============ 预览结果 ============
+function previewResult() {
+    // 校验必填
+    const name = document.getElementById('examinee_name').value.trim();
+    const team = getSelectedRegion();
+    const examDate = document.getElementById('exam_date').value;
+    const judge = document.getElementById('judge_name').value.trim();
+    const duration = document.getElementById('duration').value;
+
+    if (!name) { showToast('请输入被考核人姓名'); return; }
+    if (!team) { showToast('请选择所属大区'); return; }
+    if (!examDate) { showToast('请选择考核日期'); return; }
+    if (!judge) { showToast('请输入评委姓名'); return; }
+    if (!duration) { showToast('请输入演讲用时'); return; }
+
+    const scores = getScoreValues();
+    const result = calcTotalAndLevel(scores);
+
+    // 渲染结果页
+    document.getElementById('result-total').textContent = result.total;
+    document.getElementById('result-level').textContent = result.level;
+    document.getElementById('result-status').textContent = result.passStatus;
+
+    // 结果 hero 背景色
+    const hero = document.getElementById('result-hero');
+    if (result.level === '不及格') hero.style.background = 'linear-gradient(135deg, #dc2626, #ef4444)';
+    else if (result.level === '及格') hero.style.background = 'linear-gradient(135deg, #16a34a, #22c55e)';
+    else if (result.level === '良好') hero.style.background = 'linear-gradient(135deg, #1a56db, #3b82f6)';
+    else hero.style.background = 'linear-gradient(135deg, #7c3aed, #a78bfa)';
+
+    // 超时警告
+    document.getElementById('result-overtime-warn').style.display = scores.isOvertime ? 'flex' : 'none';
+
+    // 各项得分
+    const dims = ['opening', 'structure', 'product', 'clinical', 'valueAction'];
+    const dimLabels = { opening: '开场引入', structure: '内容组织与时间控制', product: '产品知识掌握', clinical: '临床专业性水平', valueAction: '传递价值与倡导行动' };
+    dims.forEach(d => {
+        const el = document.getElementById('r-' + d);
+        const val = scores[d];
+        el.textContent = val + '/' + MAX_SCORES[d];
+        el.className = 'val';
+        if (d === 'structure' && scores.isOvertime) el.classList.add('zero');
+        else if (val >= MAX_SCORES[d] * 0.9) el.classList.add('high');
+    });
+
+    // 基本信息
+    document.getElementById('r-name').textContent = name;
+    document.getElementById('r-team').textContent = team;
+    document.getElementById('r-judge').textContent = judge;
+    document.getElementById('r-date').textContent = examDate;
+    document.getElementById('r-duration').textContent = duration + ' 分钟' + (scores.isOvertime ? '（超时）' : '');
+
+    // 评语
+    const comment = document.getElementById('comment').value.trim();
+    if (comment) {
+        document.getElementById('r-comment-box').style.display = 'block';
+        document.getElementById('r-comment').textContent = comment;
+    } else {
+        document.getElementById('r-comment-box').style.display = 'none';
+    }
+
+    showPage('page-result');
+}
+
+// ============ 确认提交 ============
+function confirmSubmit() {
+    document.getElementById('confirm-modal').classList.add('show');
+}
+
+function closeConfirm() {
+    document.getElementById('confirm-modal').classList.remove('show');
+}
+
+function doSubmit() {
+    closeConfirm();
+
+    const scores = getScoreValues();
+    const result = calcTotalAndLevel(scores);
+
+    const record = {
+        id: Date.now().toString(36) + Math.random().toString(36).substr(2, 6),
+        examinee_name: document.getElementById('examinee_name').value.trim(),
+        team: getSelectedRegion(),
+        judge_name: document.getElementById('judge_name').value.trim(),
+        exam_date: document.getElementById('exam_date').value,
+        duration_minutes: parseFloat(document.getElementById('duration').value) || 0,
+        is_overtime: scores.isOvertime,
+        opening_score: scores.opening,
+        structure_score: scores.structure,
+        product_score: scores.product,
+        clinical_score: scores.clinical,
+        value_action_score: scores.valueAction,
+        total_score: result.total,
+        level: result.level,
+        pass_status: result.passStatus,
+        comment: document.getElementById('comment').value.trim(),
+        transcript: fullTranscript.trim(),
+        recording_duration: recDurationSeconds,
+        created_at: new Date().toISOString()
+    };
+
+    const allScores = getScores();
+    allScores.push(record);
+    saveScores(allScores);
+
+    // 同步到服务端（后台管理可查看）
+    syncToServer(record);
+
+    showToast('✅ 提交成功！');
+    setTimeout(() => {
+        resetScoringForm();
+        showPage('page-home');
+    }, 800);
+}
+
+function syncToServer(record) {
+    // 纯本地存储，无需后端
+}
+
+// ============ 数据同步（通过导出/导入） ============
+async function syncFromServer() {
+    // 纯本地存储，无需后端
+}
+
+function resetScoringForm() {
+    document.getElementById('examinee_name').value = '';
+    document.querySelectorAll('input[name="region"]').forEach(r => r.checked = false);
+    document.getElementById('judge_name').value = '';
+    document.getElementById('duration').value = '';
+    document.getElementById('comment').value = '';
+    document.getElementById('overtime-alert').style.display = 'none';
+    document.getElementById('structure-overtime-tag').style.display = 'none';
+
+    ['opening', 'structure', 'product', 'clinical', 'valueAction'].forEach(d => {
+        document.getElementById('slider_' + d).value = 0;
+        document.getElementById('input_' + d).value = 0;
+        document.getElementById('bar_' + d).style.width = '0%';
+        document.getElementById('input_' + d).disabled = false;
+        document.getElementById('slider_' + d).disabled = false;
+    });
+
+    // 重置录音状态
+    fullTranscript = '';
+    interimTranscript = '';
+    recDurationSeconds = 0;
+    audioChunks = [];
+    const recBtn = document.getElementById('rec-btn');
+    if (recBtn) {
+        recBtn.className = 'rec-btn idle';
+        recBtn.textContent = '🎙️';
+    }
+    const pauseBtn = document.getElementById('pause-btn');
+    if (pauseBtn) {
+        pauseBtn.style.display = 'none';
+    }
+    const recStatus = document.getElementById('rec-status');
+    if (recStatus) {
+        recStatus.textContent = '点击开始录音';
+        recStatus.className = 'status';
+    }
+    const recHint = document.getElementById('rec-hint');
+    if (recHint) recHint.textContent = '录音将实时转文字，时长自动填入演讲用时';
+    const recTimer = document.getElementById('rec-timer');
+    if (recTimer) {
+        recTimer.textContent = '00:00';
+        recTimer.className = 'rec-timer';
+    }
+    const transcriptText = document.getElementById('transcript-text');
+    if (transcriptText) transcriptText.innerHTML = '<span class="placeholder">语音识别内容将在此显示...</span>';
+    const recActions = document.getElementById('rec-actions');
+    if (recActions) recActions.style.display = 'none';
+
+    // 重置 AI 评分卡
+    const aiCard = document.getElementById('ai-score-card');
+    if (aiCard) aiCard.classList.add('show');
+    const aiBtn = document.getElementById('ai-score-btn');
+    if (aiBtn) { aiBtn.disabled = false; aiBtn.innerHTML = '🧠 根据演讲内容自动评分'; }
+    const aiResult = document.getElementById('ai-score-result');
+    if (aiResult) aiResult.innerHTML = '';
+    const aiHint = document.getElementById('ai-score-hint');
+    if (aiHint) { aiHint.style.display = 'block'; aiHint.textContent = '请先录音获取演讲内容，AI 将自动分析并评分'; }
+    window._aiScoreResult = null;
+
+    updateRealtime();
+}
+
+// ============ 排名页 ============
+function renderRanking() {
+    let data = getScores();
+    const dateFilter = document.getElementById('rank-date-filter').value;
+    const teamFilter = document.getElementById('rank-team-filter').value;
+
+    // 筛选
+    if (dateFilter) data = data.filter(d => d.exam_date === dateFilter);
+    if (teamFilter) data = data.filter(d => d.team === teamFilter);
+
+    // 排序
+    data.sort((a, b) => b.total_score - a.total_score);
+
+    const container = document.getElementById('ranking-list');
+    if (data.length === 0) {
+        container.innerHTML = '<div class="empty-state"><div class="icon">📭</div><div>暂无评分数据</div></div>';
+        return;
+    }
+
+    let html = `<div class="rank-table">
+        <div class="rank-header">
+            <div>排名</div><div>姓名/大区</div><div>总分</div><div>等级</div><div>结果</div>
+        </div>`;
+
+    data.forEach((d, i) => {
+        const rankNum = i + 1;
+        let rankCls = '';
+        if (rankNum === 1) rankCls = 'top1';
+        else if (rankNum === 2) rankCls = 'top2';
+        else if (rankNum === 3) rankCls = 'top3';
+
+        const passCls = d.level === '不及格' ? 'no' : 'yes';
+        const passText = d.level === '不及格' ? '未通过' : '通过';
+
+        html += `<div class="rank-row" onclick="viewDetail('${d.id}')">
+            <div><span class="rank-num ${rankCls}">${rankNum}</span></div>
+            <div><div class="name">${d.examinee_name}</div><div class="team">${d.team}</div></div>
+            <div style="font-weight:700; ${d.level === '不及格' ? 'color:var(--danger)' : d.level === '优秀' ? 'color:var(--excellent)' : ''}">${d.total_score}</div>
+            <div style="font-size:12px;">${d.level}</div>
+            <div><span class="pass-tag ${passCls}">${passText}</span></div>
+        </div>`;
+    });
+
+    html += '</div>';
+    container.innerHTML = html;
+}
+
+// ============ 历史记录页 ============
+function renderHistory() {
+    const data = getScores().sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+    const container = document.getElementById('history-list');
+
+    if (data.length === 0) {
+        container.innerHTML = '<div class="empty-state"><div class="icon">📭</div><div>暂无评分记录</div></div>';
+        return;
+    }
+
+    let html = '';
+    data.forEach(d => {
+        let scoreCls = '';
+        if (d.level === '不及格') scoreCls = 'fail';
+        else if (d.level === '优秀') scoreCls = 'excellent';
+
+        html += `<div class="history-item" onclick="viewDetail('${d.id}')">
+            <div class="left">
+                <div class="name">${d.examinee_name}</div>
+                <div class="meta">${d.team} · ${d.exam_date}</div>
+            </div>
+            <div class="right">
+                <div class="score ${scoreCls}">${d.total_score}</div>
+                <div style="font-size:11px; color:var(--text-secondary);">${d.level}</div>
+            </div>
+        </div>`;
+    });
+
+    container.innerHTML = html;
+}
+
+// ============ 详情页 ============
+function viewDetail(id) {
+    const data = getScores();
+    const record = data.find(d => d.id === id);
+    if (!record) { showToast('记录不存在'); return; }
+
+    const hero = document.getElementById('detail-hero');
+    if (record.level === '不及格') hero.style.background = 'linear-gradient(135deg, #dc2626, #ef4444)';
+    else if (record.level === '及格') hero.style.background = 'linear-gradient(135deg, #16a34a, #22c55e)';
+    else if (record.level === '良好') hero.style.background = 'linear-gradient(135deg, #1a56db, #3b82f6)';
+    else hero.style.background = 'linear-gradient(135deg, #7c3aed, #a78bfa)';
+
+    document.getElementById('d-total').textContent = record.total_score;
+    document.getElementById('d-level').textContent = record.level;
+
+    document.getElementById('d-opening').textContent = record.opening_score + '/10';
+    document.getElementById('d-structure').textContent = record.structure_score + '/15';
+    document.getElementById('d-product').textContent = record.product_score + '/25';
+    document.getElementById('d-clinical').textContent = record.clinical_score + '/25';
+    document.getElementById('d-valueAction').textContent = record.value_action_score + '/25';
+
+    document.getElementById('d-name').textContent = record.examinee_name;
+    document.getElementById('d-team').textContent = record.team;
+    document.getElementById('d-judge').textContent = record.judge_name;
+    document.getElementById('d-date').textContent = record.exam_date;
+    document.getElementById('d-duration').textContent = record.duration_minutes + ' 分钟';
+    document.getElementById('d-overtime').textContent = record.is_overtime ? '是（超时）' : '否';
+    document.getElementById('d-level2').textContent = record.level;
+    document.getElementById('d-pass').textContent = record.pass_status;
+    document.getElementById('d-pass').style.color = record.level === '不及格' ? 'var(--danger)' : 'var(--success)';
+
+    const created = new Date(record.created_at);
+    document.getElementById('d-created').textContent = created.toLocaleString('zh-CN');
+
+    document.getElementById('d-overtime-warn').style.display = record.is_overtime ? 'flex' : 'none';
+
+    if (record.comment) {
+        document.getElementById('d-comment-box').style.display = 'block';
+        document.getElementById('d-comment').textContent = record.comment;
+    } else {
+        document.getElementById('d-comment-box').style.display = 'none';
+    }
+
+    // 语音识别记录
+    if (record.transcript) {
+        document.getElementById('d-transcript-box').style.display = 'block';
+        document.getElementById('d-transcript').textContent = record.transcript;
+    } else {
+        document.getElementById('d-transcript-box').style.display = 'none';
+    }
+
+    showPage('page-detail');
+}
+
+// ============ Toast ============
+function showToast(msg) {
+    const el = document.getElementById('toast');
+    el.textContent = msg;
+    el.classList.add('show');
+    setTimeout(() => el.classList.remove('show'), 2000);
+}
+
+// ============ 初始化 ============
+document.addEventListener('DOMContentLoaded', () => {
+    initScoringForm();
+    updateRealtime();
+});
+
+// 点击 modal 背景关闭
+document.getElementById('criteria-modal').addEventListener('click', function(e) {
+    if (e.target === this) closeCriteria();
+});
+
+// ============ 录音 & 语音识别 ============
+let isRecording = false;
+let isPaused = false;
+let recStartTime = 0;
+let recPausedDuration = 0; // 累计暂停的毫秒数
+let recPauseStart = 0; // 本次暂停的开始时间
+let recTimerInterval = null;
+let recDurationSeconds = 0;
+let mediaRecorder = null;
+let audioChunks = [];
+let speechRecognition = null;
+let fullTranscript = '';
+let interimTranscript = '';
+let speechSupported = true;
+
+// 初始化语音识别
+function initSpeechRecognition() {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+        speechSupported = false;
+        document.getElementById('no-speech-tip').classList.add('show');
+        return;
+    }
+
+    speechRecognition = new SpeechRecognition();
+    speechRecognition.continuous = true;
+    speechRecognition.interimResults = true;
+    speechRecognition.lang = 'zh-CN';
+    speechRecognition.maxAlternatives = 1;
+
+    speechRecognition.onresult = function(event) {
+        let interim = '';
+        let final = '';
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+            const transcript = event.results[i][0].transcript;
+            if (event.results[i].isFinal) {
+                final += transcript;
+            } else {
+                interim += transcript;
+            }
+        }
+        if (final) {
+            fullTranscript += final;
+        }
+        interimTranscript = interim;
+        updateTranscriptDisplay();
+    };
+
+    speechRecognition.onerror = function(event) {
+        console.log('语音识别错误:', event.error);
+        if (event.error === 'no-speech') {
+            // 静音不处理，继续
+        } else if (event.error === 'network') {
+            showToast('语音识别网络错误，请检查网络连接');
+        } else if (event.error === 'not-allowed') {
+            showToast('请允许麦克风权限');
+            stopRecording();
+        } else {
+            // 其他错误尝试重启
+            if (isRecording) {
+                try { speechRecognition.stop(); } catch(e) {}
+                setTimeout(() => {
+                    if (isRecording) {
+                        try { speechRecognition.start(); } catch(e) {}
+                    }
+                }, 300);
+            }
+        }
+    };
+
+    speechRecognition.onend = function() {
+        // 如果还在录音状态，自动重启（浏览器会自动断开长录音）
+        if (isRecording) {
+            try {
+                speechRecognition.start();
+            } catch(e) {
+                setTimeout(() => {
+                    if (isRecording) {
+                        try { speechRecognition.start(); } catch(e2) {}
+                    }
+                }, 300);
+            }
+        }
+    };
+}
+
+function updateTranscriptDisplay() {
+    const textEl = document.getElementById('transcript-text');
+    const display = fullTranscript + (interimTranscript ? '<span style="color:var(--text-secondary)">' + interimTranscript + '</span>' : '');
+    if (display) {
+        textEl.innerHTML = display;
+    }
+}
+
+function toggleRecording() {
+    if (isRecording) {
+        stopRecording();
+    } else {
+        startRecording();
+    }
+}
+
+function togglePause() {
+    if (!isRecording) return;
+    if (!isPaused) {
+        // 暂停
+        isPaused = true;
+        recPauseStart = Date.now();
+
+        // 暂停 MediaRecorder
+        if (mediaRecorder && mediaRecorder.state === 'recording') {
+            mediaRecorder.pause();
+        }
+        // 暂停语音识别
+        if (speechRecognition) {
+            try { speechRecognition.stop(); } catch(e) {}
+        }
+
+        // 更新 UI
+        const pauseBtn = document.getElementById('pause-btn');
+        pauseBtn.textContent = '▶️';
+        pauseBtn.className = 'rec-btn resume-btn';
+        document.getElementById('rec-status').textContent = '已暂停';
+        document.getElementById('rec-status').className = 'status rec-paused';
+    } else {
+        // 恢复
+        isPaused = false;
+        recPausedDuration += (Date.now() - recPauseStart);
+
+        // 恢复 MediaRecorder
+        if (mediaRecorder && mediaRecorder.state === 'paused') {
+            mediaRecorder.resume();
+        }
+        // 恢复语音识别
+        if (speechRecognition) {
+            try { speechRecognition.start(); } catch(e) {
+                setTimeout(() => { try { speechRecognition.start(); } catch(e2) {} }, 300);
+            }
+        }
+
+        // 更新 UI
+        const pauseBtn = document.getElementById('pause-btn');
+        pauseBtn.textContent = '⏸️';
+        pauseBtn.className = 'rec-btn pause-btn';
+        document.getElementById('rec-status').textContent = '录音中...';
+        document.getElementById('rec-status').className = 'status rec-active';
+    }
+}
+
+async function startRecording() {
+    try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+
+        // 初始化 MediaRecorder
+        audioChunks = [];
+        mediaRecorder = new MediaRecorder(stream);
+        mediaRecorder.ondataavailable = function(e) {
+            if (e.data.size > 0) audioChunks.push(e.data);
+        };
+        mediaRecorder.start(1000);
+
+        // 初始化语音识别
+        if (speechSupported && !speechRecognition) {
+            initSpeechRecognition();
+        }
+        if (speechRecognition) {
+            try {
+                speechRecognition.start();
+            } catch(e) {
+                // 可能已经在运行
+                try { speechRecognition.stop(); } catch(e2) {}
+                setTimeout(() => { try { speechRecognition.start(); } catch(e3) {} }, 300);
+            }
+        }
+
+        isRecording = true;
+        isPaused = false;
+        recStartTime = Date.now();
+        recDurationSeconds = 0;
+        recPausedDuration = 0;
+
+        // 更新 UI
+        const btn = document.getElementById('rec-btn');
+        btn.className = 'rec-btn recording';
+        btn.textContent = '⏹️';
+        document.getElementById('pause-btn').style.display = '';
+        document.getElementById('pause-btn').textContent = '⏸️';
+        document.getElementById('pause-btn').className = 'rec-btn pause-btn';
+        document.getElementById('rec-status').textContent = '录音中...';
+        document.getElementById('rec-status').className = 'status rec-active';
+        document.getElementById('rec-hint').textContent = '再次点击停止录音';
+        document.getElementById('transcript-box').classList.add('show');
+        document.getElementById('rec-actions').style.display = 'none';
+
+        // 计时器
+        recTimerInterval = setInterval(() => {
+            if (!isPaused) {
+                recDurationSeconds = Math.floor((Date.now() - recStartTime - recPausedDuration) / 1000);
+                const min = Math.floor(recDurationSeconds / 60);
+                const sec = recDurationSeconds % 60;
+                const timerEl = document.getElementById('rec-timer');
+                timerEl.textContent = String(min).padStart(2, '0') + ':' + String(sec).padStart(2, '0');
+                timerEl.className = recDurationSeconds > 900 ? 'rec-timer overtime' : 'rec-timer';
+            }
+        }, 500);
+
+    } catch (err) {
+        if (err.name === 'NotAllowedError') {
+            showToast('请允许麦克风访问权限');
+        } else if (err.name === 'NotFoundError') {
+            showToast('未找到麦克风设备');
+        } else {
+            showToast('录音启动失败：' + err.message);
+        }
+    }
+}
+
+function stopRecording() {
+    isRecording = false;
+    isPaused = false;
+
+    // 如果处于暂停状态，累计暂停时间
+    if (recPauseStart > 0 && recPausedDuration > 0 || recPauseStart > 0) {
+        recPausedDuration += (Date.now() - recPauseStart);
+        recPauseStart = 0;
+    }
+
+    // 停止 MediaRecorder
+    if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+        if (mediaRecorder.state === 'paused') mediaRecorder.resume();
+        mediaRecorder.stop();
+        mediaRecorder.stream.getTracks().forEach(t => t.stop());
+    }
+
+    // 停止语音识别
+    if (speechRecognition) {
+        try { speechRecognition.stop(); } catch(e) {}
+    }
+
+    // 停止计时
+    if (recTimerInterval) {
+        clearInterval(recTimerInterval);
+        recTimerInterval = null;
+    }
+
+    // 最终时长
+    recDurationSeconds = Math.floor((Date.now() - recStartTime - recPausedDuration) / 1000);
+
+    // 更新 UI
+    const btn = document.getElementById('rec-btn');
+    btn.className = 'rec-btn done';
+    btn.textContent = '✅';
+    document.getElementById('pause-btn').style.display = 'none';
+    const mins = (recDurationSeconds / 60).toFixed(1);
+    document.getElementById('rec-status').textContent = '录音完成 · ' + mins + ' 分钟';
+    document.getElementById('rec-status').className = 'status rec-done';
+    document.getElementById('rec-hint').textContent = '可将录音时长自动填入演讲用时';
+    document.getElementById('rec-actions').style.display = 'flex';
+
+    // 自动填入演讲用时
+    fillDurationFromRec();
+
+    // 显示 AI 自动评分入口
+    if (fullTranscript.trim()) {
+        document.getElementById('ai-score-card').classList.add('show');
+        const hint = document.getElementById('ai-score-hint');
+        if (hint) hint.textContent = '录音内容已就绪，点击下方按钮 AI 自动评分';
+    }
+}
+
+function fillDurationFromRec() {
+    if (recDurationSeconds > 0) {
+        const mins = Math.round(recDurationSeconds / 60 * 10) / 10;
+        document.getElementById('duration').value = mins;
+        checkOvertime();
+        showToast('已填入演讲用时 ' + mins + ' 分钟');
+    }
+}
+
+function resetRecording() {
+    // 清空状态
+    fullTranscript = '';
+    interimTranscript = '';
+    recDurationSeconds = 0;
+    audioChunks = [];
+
+    // 重置 UI
+    const btn = document.getElementById('rec-btn');
+    btn.className = 'rec-btn idle';
+    btn.textContent = '🎙️';
+    document.getElementById('rec-status').textContent = '点击开始录音';
+    document.getElementById('rec-status').className = 'status';
+    document.getElementById('rec-hint').textContent = '录音将实时转文字，时长自动填入演讲用时';
+    document.getElementById('rec-timer').textContent = '00:00';
+    document.getElementById('rec-timer').className = 'rec-timer';
+    document.getElementById('transcript-text').innerHTML = '<span class="placeholder">语音识别内容将在此显示...</span>';
+    document.getElementById('rec-actions').style.display = 'none';
+
+    showToast('已重置，可重新录音');
+}
+
+function clearTranscript() {
+    fullTranscript = '';
+    interimTranscript = '';
+    document.getElementById('transcript-text').innerHTML = '<span class="placeholder">语音识别内容将在此显示...</span>';
+}
+
+// ============ AI 自动评分引擎 ============
+function runAIScoring() {
+    const text = fullTranscript.trim();
+    if (!text) {
+        showToast('请先录音获取演讲内容');
+        return;
+    }
+
+    const btn = document.getElementById('ai-score-btn');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span> AI 分析中...';
+
+    // 模拟分析延迟，让体验更真实
+    setTimeout(() => {
+        const result = aiAnalyzeSpeech(text);
+        renderAIResult(result);
+        btn.disabled = false;
+        btn.innerHTML = '🧠 重新分析评分';
+    }, 1200);
+}
+
+function aiAnalyzeSpeech(text) {
+    const t = text;
+    const tLower = t.toLowerCase();
+    const len = t.length;
+
+    // ---------- 开场引入 (0-10) ----------
+    let openingScore = 4; // 基础分
+    let openingReason = '';
+
+    // 检测开场部分（前 150 字）
+    const openingPart = t.substring(0, Math.min(150, len));
+
+    const openingStrong = ['痛点', '困境', '挑战', '难点', '问题', '困扰', '面临', '现状'];
+    const openingScene = ['场景', '实际', '临床', '科室', '日常', '遇到', '碰到'];
+    const openingInteract = ['大家', '各位', '请问', '有多少', '是否', '举手', '想不想', '有没有'];
+    const openingBasic = ['今天', '主题', '介绍', '分享', '汇报', '目的', '背景', '欢迎'];
+
+    let openingStrongHit = openingStrong.filter(k => openingPart.includes(k)).length;
+    let openingSceneHit = openingScene.filter(k => openingPart.includes(k)).length;
+    let openingInteractHit = openingInteract.filter(k => openingPart.includes(k)).length;
+    let openingBasicHit = openingBasic.filter(k => openingPart.includes(k)).length;
+
+    if (openingStrongHit >= 2 && openingSceneHit >= 1 && openingInteractHit >= 1) {
+        openingScore = 10;
+        openingReason = '开场结合临床痛点与科室场景，有互动设计，引人共鸣';
+    } else if (openingStrongHit >= 2 && openingSceneHit >= 1) {
+        openingScore = 9;
+        openingReason = '开场结合行业/临床痛点引入主题，吸引力较好';
+    } else if (openingStrongHit >= 1 && openingInteractHit >= 1) {
+        openingScore = 8;
+        openingReason = '开场提及痛点并有互动，但科室场景结合不足';
+    } else if (openingStrongHit >= 1 || openingSceneHit >= 1) {
+        openingScore = 7;
+        openingReason = '开场有一定痛点或场景引入，但缺乏互动';
+    } else if (openingBasicHit >= 2) {
+        openingScore = 6;
+        openingReason = '开场有基本背景和目的介绍，但缺少痛点引入';
+    } else if (openingBasicHit >= 1) {
+        openingScore = 5;
+        openingReason = '开场过于简略，仅简单提及主题';
+    } else {
+        openingScore = 4;
+        openingReason = '缺少开场引入，直接进入内容';
+    }
+
+    // ---------- 内容组织与时间控制 (0-15) ----------
+    let structureScore = 8;
+    let structureReason = '';
+
+    const structureSignal = ['首先', '第一', '其次', '第二', '然后', '接着', '最后', '总结', '综上', '回顾', '另一方面', '此外', '另外'];
+    const structureFrame = ['三个方面', '四个要点', '三个部分', '两部分', '几方面', '几个维度', '以下几', '分为'];
+    const structureSummary = ['总结', '回顾', '归纳', '强调', '核心', '关键', '重点'];
+    const structureTransition = ['接下来', '下面', '那么', '好的', '转入', '进入'];
+
+    let structureSignalHit = structureSignal.filter(k => t.includes(k)).length;
+    let structureFrameHit = structureFrame.filter(k => t.includes(k)).length;
+    let structureSummaryHit = structureSummary.filter(k => t.includes(k)).length;
+    let structureTransitionHit = structureTransition.filter(k => t.includes(k)).length;
+
+    // 超时处理
+    const dur = parseFloat(document.getElementById('duration').value) || 0;
+    if (dur > 15) {
+        structureScore = 0;
+        structureReason = '演讲超过15分钟，按规则计0分';
+    } else if (structureSignalHit >= 4 && structureFrameHit >= 1 && structureSummaryHit >= 2) {
+        structureScore = 15;
+        structureReason = '内容结构清晰，框架完整，有总结归纳，逻辑严密';
+    } else if (structureSignalHit >= 3 && structureSummaryHit >= 1) {
+        structureScore = 14;
+        structureReason = 'PPT框架清晰，模块间过渡自然，有总结';
+    } else if (structureSignalHit >= 3 && structureTransitionHit >= 2) {
+        structureScore = 13;
+        structureReason = '结构较清晰，模块过渡自然';
+    } else if (structureSignalHit >= 2 && structureFrameHit >= 1) {
+        structureScore = 12;
+        structureReason = '有框架意识，结构基本完整';
+    } else if (structureSignalHit >= 2 || (structureSignalHit >= 1 && structureTransitionHit >= 2)) {
+        structureScore = 11;
+        structureReason = '结构基本完整，有逻辑但过渡可优化';
+    } else if (structureSignalHit >= 1 || structureTransitionHit >= 2) {
+        structureScore = 10;
+        structureReason = '结构尚可，但模块划分和过渡需要加强';
+    } else if (structureSummaryHit >= 1) {
+        structureScore = 9;
+        structureReason = '有总结但整体结构不够清晰';
+    } else {
+        structureScore = 7;
+        structureReason = '结构不清晰，缺少过渡和总结';
+    }
+
+    // ---------- 产品知识掌握 (0-25) ----------
+    let productScore = 14;
+    let productReason = '';
+
+    const productCore = ['悦见', '适应症', '功能', '机制', '原理', '作用', '用法', '用量', '疗效'];
+    const productAdvantage = ['优势', '独特', '差异', '卖点', '领先', '创新', '独家', '首家', '优于', '更好', '更强'];
+    const productCompetitor = ['竞品', '对比', '比较', '优于', '区别', '不同', '替代', '对照'];
+    const productDetail = ['数据', '研究', '试验', '结果', '证实', '显示', '证明', '显著', '改善', '提升'];
+    const productFlow = ['流程', '步骤', '操作', '使用', '方案', '策略', '方法'];
+
+    let productCoreHit = productCore.filter(k => t.includes(k)).length;
+    let productAdvantageHit = productAdvantage.filter(k => t.includes(k)).length;
+    let productCompetitorHit = productCompetitor.filter(k => t.includes(k)).length;
+    let productDetailHit = productDetail.filter(k => t.includes(k)).length;
+    let productFlowHit = productFlow.filter(k => t.includes(k)).length;
+
+    // 检测"悦见"是否被提及
+    const mentionedYueJian = t.includes('悦见');
+
+    if (productCoreHit >= 4 && productAdvantageHit >= 2 && productCompetitorHit >= 1 && productDetailHit >= 2 && mentionedYueJian) {
+        productScore = 25;
+        productReason = '产品知识全面扎实，差异化优势阐述流利，有竞品对标和数据支撑';
+    } else if (productCoreHit >= 3 && productAdvantageHit >= 2 && productCompetitorHit >= 1 && mentionedYueJian) {
+        productScore = 24;
+        productReason = '产品知识专业度高，有竞品对比和差异化阐述';
+    } else if (productCoreHit >= 3 && productAdvantageHit >= 1 && productDetailHit >= 1 && mentionedYueJian) {
+        productScore = 22;
+        productReason = '产品核心优势阐述清晰，有数据支撑';
+    } else if (productCoreHit >= 3 && productAdvantageHit >= 1 && mentionedYueJian) {
+        productScore = 20;
+        productReason = '产品核心卖点阐述较清晰';
+    } else if (productCoreHit >= 2 && mentionedYueJian) {
+        productScore = 18;
+        productReason = '产品知识基本完整，但深度不足';
+    } else if (productCoreHit >= 2) {
+        productScore = 16;
+        productReason = '提及产品相关内容，但核心卖点不够突出';
+    } else if (productCoreHit >= 1) {
+        productScore = 14;
+        productReason = '产品知识涉及较少，理解停留在表面';
+    } else {
+        productScore = 12;
+        productReason = '产品知识阐述不足，核心信息传递不清';
+    }
+
+    // ---------- 临床专业性水平 (0-25) ----------
+    let clinicalScore = 14;
+    let clinicalReason = '';
+
+    const clinicalCase = ['病例', '案例', '患者', '病人', '治疗', '诊疗', '就诊'];
+    const clinicalGuide = ['指南', '共识', '规范', '标准', '推荐', '循证', '证据', '文献'];
+    const clinicalData = ['数据', '指标', '改善', '降低', '提高', '减少', '有效率', '安全性', '不良反应'];
+    const clinicalIndication = ['适应症', '禁忌', '适用', '人群', '类型', '分期', '程度'];
+    const clinicalDepth = ['对比', '前后', '基线', '随访', '终点', '预后', '转归', '客观', '指标变化'];
+
+    let clinicalCaseHit = clinicalCase.filter(k => t.includes(k)).length;
+    let clinicalGuideHit = clinicalGuide.filter(k => t.includes(k)).length;
+    let clinicalDataHit = clinicalData.filter(k => t.includes(k)).length;
+    let clinicalIndicationHit = clinicalIndication.filter(k => t.includes(k)).length;
+    let clinicalDepthHit = clinicalDepth.filter(k => t.includes(k)).length;
+
+    if (clinicalCaseHit >= 3 && clinicalGuideHit >= 2 && clinicalDataHit >= 2 && clinicalDepthHit >= 1) {
+        clinicalScore = 25;
+        clinicalScore = Math.min(25, clinicalScore);
+        clinicalReason = '病例讲解生动有数据对比，指南循证引用熟练，能解答临床顾虑';
+    } else if (clinicalCaseHit >= 2 && clinicalGuideHit >= 1 && clinicalDataHit >= 2) {
+        clinicalScore = 23;
+        clinicalReason = '病例讲解完整有数据支撑，指南引用准确';
+    } else if (clinicalCaseHit >= 2 && clinicalGuideHit >= 1) {
+        clinicalScore = 21;
+        clinicalReason = '病例讲解完整，有指南背书';
+    } else if (clinicalCaseHit >= 2 && clinicalDataHit >= 1) {
+        clinicalScore = 20;
+        clinicalReason = '病例讲解较完整，有数据引用';
+    } else if (clinicalCaseHit >= 1 && clinicalGuideHit >= 1) {
+        clinicalScore = 18;
+        clinicalReason = '有病例提及和指南引用，但深度结合不足';
+    } else if (clinicalCaseHit >= 1 && clinicalIndicationHit >= 1) {
+        clinicalScore = 16;
+        clinicalReason = '有病例和适应症，但缺少指南循证';
+    } else if (clinicalCaseHit >= 1) {
+        clinicalScore = 15;
+        clinicalReason = '提及病例但讲解生硬，未与产品结合';
+    } else if (clinicalGuideHit >= 1) {
+        clinicalScore = 14;
+        clinicalReason = '提及指南但无病例支撑';
+    } else {
+        clinicalScore = 12;
+        clinicalReason = '临床专业性不足，缺少病例和循证支撑';
+    }
+
+    // ---------- 传递价值与倡导行动 (0-25) ----------
+    let valueActionScore = 14;
+    let valueActionReason = '';
+
+    const valueFAB = ['属性', '作用', '益处', '好处', 'FAB', '特征', '利益', '价值'];
+    const valueAction = ['处方', '推荐', '选择', '首选', '建议', '使用', '应用', '采用'];
+    const valueConversion = ['转化', '闭环', '获益', '受益', '效果', '改善', '满意', '信任'];
+    const valueAdvocate = ['希望大家', '建议您', '推荐各位', '行动', '接下来', '让我们', '一起'];
+    const valueScene = ['场景', '实际', '日常', '门诊', '病房', '临床中', '实践中'];
+
+    let valueFABHit = valueFAB.filter(k => t.includes(k)).length;
+    let valueActionHit = valueAction.filter(k => t.includes(k)).length;
+    let valueConversionHit = valueConversion.filter(k => t.includes(k)).length;
+    let valueAdvocateHit = valueAdvocate.filter(k => t.includes(k)).length;
+    let valueSceneHit = valueScene.filter(k => t.includes(k)).length;
+
+    // 检测结尾部分（后 200 字）
+    const closingPart = t.substring(Math.max(0, len - 200));
+    const closingAction = ['总结', '建议', '推荐', '希望', '感谢', '谢谢', '期待', '行动'];
+    let closingActionHit = closingAction.filter(k => closingPart.includes(k)).length;
+
+    if (valueFABHit >= 2 && valueActionHit >= 2 && valueConversionHit >= 2 && valueAdvocateHit >= 1 && valueSceneHit >= 1 && closingActionHit >= 2) {
+        valueActionScore = 25;
+        valueActionReason = 'FAB转化代入诊疗场景，行动倡导具体可行，转化逻辑闭环';
+    } else if (valueFABHit >= 2 && valueActionHit >= 2 && valueAdvocateHit >= 1 && closingActionHit >= 2) {
+        valueActionScore = 23;
+        valueActionReason = 'FAB转化明确，行动倡导具体，有转化逻辑';
+    } else if (valueFABHit >= 1 && valueActionHit >= 2 && closingActionHit >= 1) {
+        valueActionScore = 21;
+        valueActionReason = '有FAB转化和明确行动倡导';
+    } else if (valueFABHit >= 1 && valueActionHit >= 1 && closingActionHit >= 1) {
+        valueActionScore = 20;
+        valueActionReason = '观点有FAB支撑，结尾有行动倡导';
+    } else if (valueActionHit >= 1 && closingActionHit >= 1) {
+        valueActionScore = 18;
+        valueActionReason = '有行动建议和结尾倡导，但FAB不够明确';
+    } else if (valueFABHit >= 1 || valueActionHit >= 1) {
+        valueActionScore = 16;
+        valueActionReason = '有产品价值提及，但行动倡导不够具体';
+    } else if (closingActionHit >= 1) {
+        valueActionScore = 15;
+        valueActionReason = '结尾有口头倡导，但缺少FAB转化';
+    } else {
+        valueActionScore = 12;
+        valueActionReason = '缺少价值传递和行动倡导';
+    }
+
+    // 总分与等级
+    const total = openingScore + structureScore + productScore + clinicalScore + valueActionScore;
+    let level, passStatus;
+    if (total < 80) { level = '不及格'; passStatus = '未通过'; }
+    else if (total <= 85) { level = '及格'; passStatus = '通过'; }
+    else if (total <= 94) { level = '良好'; passStatus = '通过'; }
+    else { level = '优秀'; passStatus = '通过'; }
+
+    return {
+        opening: { score: openingScore, reason: openingReason },
+        structure: { score: structureScore, reason: structureReason },
+        product: { score: productScore, reason: productReason },
+        clinical: { score: clinicalScore, reason: clinicalReason },
+        valueAction: { score: valueActionScore, reason: valueActionReason },
+        total, level, passStatus
+    };
+}
+
+function renderAIResult(result) {
+    const container = document.getElementById('ai-score-result');
+    const dims = [
+        { key: 'opening', label: '开场引入', max: 10 },
+        { key: 'structure', label: '内容组织', max: 15 },
+        { key: 'product', label: '产品知识', max: 25 },
+        { key: 'clinical', label: '临床专业', max: 25 },
+        { key: 'valueAction', label: '价值传递', max: 25 }
+    ];
+
+    let html = '<div class="ai-result-grid">';
+    dims.forEach(d => {
+        const r = result[d.key];
+        const pct = Math.round(r.score / d.max * 100);
+        const color = pct >= 90 ? 'var(--excellent)' : pct >= 70 ? 'var(--primary)' : pct >= 50 ? 'var(--warning)' : 'var(--danger)';
+        html += `<div class="ai-result-item">
+            <div>
+                <div class="dim">${d.label}</div>
+                <div class="reason">${r.reason}</div>
+            </div>
+            <div class="val" style="color:${color}">${r.score}<span style="font-size:11px;color:var(--text-secondary)">/${d.max}</span></div>
+        </div>`;
+    });
+
+    // 总分行
+    const totalColor = result.total >= 95 ? 'var(--excellent)' : result.total >= 86 ? 'var(--primary)' : result.total >= 80 ? 'var(--success)' : 'var(--danger)';
+    html += `<div class="ai-result-item full" style="background:linear-gradient(135deg,#f3f0ff,#ede9fe);">
+        <div>
+            <div style="font-size:14px;font-weight:700;color:var(--excellent);">AI 评分结果</div>
+            <div style="font-size:12px;color:var(--text-secondary);">${result.level} · ${result.passStatus}</div>
+        </div>
+        <div style="font-size:28px;font-weight:800;color:${totalColor}">${result.total}</div>
+    </div>`;
+    html += '</div>';
+
+    html += `<button class="ai-apply-btn" onclick="applyAIScores()">✅ 采纳 AI 评分，填入评分表</button>`;
+
+    container.innerHTML = html;
+
+    // 保存 AI 评分结果
+    window._aiScoreResult = result;
+
+    // 隐藏提示
+    const hint = document.getElementById('ai-score-hint');
+    if (hint) hint.style.display = 'none';
+
+    // 显示 AI 评分卡
+    document.getElementById('ai-score-card').classList.add('show');
+}
+
+function applyAIScores() {
+    if (!window._aiScoreResult) return;
+    const r = window._aiScoreResult;
+
+    syncScoreFromInput('opening', r.opening.score);
+    syncScoreFromInput('structure', r.structure.score);
+    syncScoreFromInput('product', r.product.score);
+    syncScoreFromInput('clinical', r.clinical.score);
+    syncScoreFromInput('valueAction', r.valueAction.score);
+
+    updateRealtime();
+    showToast('✅ AI 评分已填入，可调整后提交');
+
+    // 滚动到评分区域
+    document.querySelector('.score-item').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+// 增强 AI 评语生成：结合语音识别内容
+const _origGenerateAIComment = generateAIComment;
+generateAIComment = function() {
+    const transcriptText = fullTranscript.trim();
+    if (!transcriptText) {
+        _origGenerateAIComment();
+        return;
+    }
+
+    const scores = getScoreValues();
+    const result = calcTotalAndLevel(scores);
+    const parts = [];
+
+    // 总体评价
+    if (result.total >= 95) parts.push('本次科室会表现优秀，各方面均达到高水准');
+    else if (result.total >= 86) parts.push('本次科室会整体表现良好');
+    else if (result.total >= 80) parts.push('本次科室会基本达标，但仍有提升空间');
+    else parts.push('本次科室会未达考核标准，需加强训练后再次考核');
+
+    // 超时
+    if (scores.isOvertime) {
+        parts.push('演讲超时，内容组织与时间控制项按规则计0分，需重点加强时间把控能力');
+    }
+
+    // 结合语音内容的分析
+    const transcriptLower = transcriptText.toLowerCase();
+
+    // 开场引入分析
+    if (scores.opening >= 9) parts.push('开场引入精彩，能有效吸引听众注意力并建立共鸣');
+    else if (scores.opening >= 6) parts.push('开场引入基本平稳，建议加强结合临床痛点和科室场景的能力');
+    else if (scores.opening > 0) parts.push('开场引入偏弱，建议注重主题引入和互动设计，避免直接切入产品');
+
+    // 内容组织
+    if (!scores.isOvertime) {
+        if (scores.structure >= 14) parts.push('内容组织条理清晰，时间把控精准');
+        else if (scores.structure >= 9) parts.push('内容组织基本完整，建议优化PPT框架和模块间的过渡逻辑');
+        else if (scores.structure > 0) parts.push('内容组织需加强，建议明确主题逻辑、优化内容结构');
+    }
+
+    // 产品知识
+    if (scores.product >= 23) parts.push('产品知识掌握扎实，对差异化优势阐述流利');
+    else if (scores.product >= 20) parts.push('产品知识掌握良好，核心卖点阐述清晰');
+    else if (scores.product >= 15) parts.push('产品知识基本掌握，但深度不足，建议加强对产品核心优势和竞品差异的理解');
+    else if (scores.product > 0) parts.push('产品知识掌握较弱，出现明显遗漏或错误，需系统学习产品知识');
+
+    // 临床专业
+    if (scores.clinical >= 23) parts.push('临床专业度出色，病例讲解生动且数据引用熟练');
+    else if (scores.clinical >= 20) parts.push('临床专业度良好，病例讲解完整，指南引用准确');
+    else if (scores.clinical >= 15) parts.push('临床专业性有提升空间，建议加强病例与产品优势的深度结合及指南循证引用');
+    else if (scores.clinical > 0) parts.push('临床专业性不足，病例和指南解读薄弱，需重点加强临床知识储备');
+
+    // 价值传递
+    if (scores.valueAction >= 23) parts.push('价值传递与行动倡导出色，FAB转化闭环，能有效激发处方意愿');
+    else if (scores.valueAction >= 20) parts.push('价值传递良好，FAB转化明确，行动倡导具体');
+    else if (scores.valueAction >= 15) parts.push('价值传递基本达标，建议加强FAB转化逻辑和行动倡导的具体性');
+    else if (scores.valueAction > 0) parts.push('价值传递与行动倡导偏弱，缺乏转化导向和具体行动点，需重点训练');
+
+    // 从语音内容中提取关键信息辅助评语
+    const keywords = {
+        clinical: ['指南', '循证', '病例', '安全性', '有效性', '疗效', '诊疗', '适应症', '临床'],
+        product: ['悦见', '产品', '功能', '优势', '竞品', '差异化', '卖点', '适应症'],
+        action: ['处方', 'FAB', '行动', '倡导', '转化', '获益', '建议'],
+        opening: ['痛点', '场景', '引入', '开场', '背景']
+    };
+
+    // 检查演讲中是否提到了关键内容
+    let mentionedClinical = keywords.clinical.some(k => transcriptLower.includes(k));
+    let mentionedProduct = keywords.product.some(k => transcriptLower.includes(k));
+    let mentionedAction = keywords.action.some(k => transcriptLower.includes(k));
+    let mentionedOpening = keywords.opening.some(k => transcriptLower.includes(k));
+
+    if (mentionedClinical && scores.clinical < 20) {
+        parts.push('演讲中虽提及临床相关内容，但阐述深度和循证支撑仍需加强');
+    }
+    if (!mentionedProduct && scores.product < 25) {
+        parts.push('演讲中产品核心卖点提及不够充分，建议更系统地阐述产品差异化优势');
+    }
+    if (!mentionedAction && scores.valueAction < 25) {
+        parts.push('演讲中缺少明确的行动倡导和转化逻辑，建议加强结尾的行动呼吁');
+    }
+
+    // 综合建议
+    const weakDims = [];
+    if (scores.opening < 6 && scores.opening > 0) weakDims.push('开场引入技巧');
+    if (scores.structure < 9 && !scores.isOvertime && scores.structure > 0) weakDims.push('内容组织与时间管理');
+    if (scores.product < 20) weakDims.push('产品知识深度');
+    if (scores.clinical < 20) weakDims.push('临床专业性');
+    if (scores.valueAction < 20) weakDims.push('价值传递与行动倡导');
+
+    if (weakDims.length > 0) {
+        parts.push(`建议后续重点加强${weakDims.join('、')}方面的训练`);
+    }
+
+    if (result.total >= 95) parts.push('继续保持优秀表现，可作为标杆分享经验');
+    else if (result.total < 80) parts.push('请认真准备后参加补考，务必在薄弱环节重点突破');
+
+    const comment = parts.join('。') + '。';
+    document.getElementById('comment').value = comment;
+    showToast('AI 评语已生成（结合语音内容）');
+};
+
+// 初始化检测语音识别支持
+document.addEventListener('DOMContentLoaded', () => {
+    initSpeechRecognition();
+    syncFromServer();
+});
+</script>
+</body>
+</html>
