@@ -1,9 +1,16 @@
-import { Redis } from '@upstash/redis';
+import Redis from 'ioredis';
 
-const redis = new Redis({
-  url: process.env.REDIS_URL || process.env.KV_REST_API_URL,
-  token: process.env.REDIS_TOKEN || process.env.KV_REST_API_TOKEN,
-});
+let redis;
+
+function getRedis() {
+  if (!redis) {
+    redis = new Redis(process.env.REDIS_URL, {
+      maxRetriesPerRequest: 3,
+      connectTimeout: 5000,
+    });
+  }
+  return redis;
+}
 
 export default async function handler(req) {
   const { method } = req;
@@ -22,21 +29,25 @@ export default async function handler(req) {
   }
 
   try {
+    const r = getRedis();
+
     if (method === 'GET') {
-      const records = await redis.get('records') || [];
+      const raw = await r.get('records');
+      const records = raw ? JSON.parse(raw) : [];
       return new Response(JSON.stringify({ success: true, data: records }), { headers });
     }
 
     if (method === 'POST') {
       const body = await req.json();
-      const records = await redis.get('records') || [];
+      const raw = await r.get('records');
+      const records = raw ? JSON.parse(raw) : [];
       const existingIndex = records.findIndex(r => r.id === body.id);
       if (existingIndex >= 0) {
         records[existingIndex] = body;
       } else {
         records.push(body);
       }
-      await redis.set('records', records);
+      await r.set('records', JSON.stringify(records));
       return new Response(JSON.stringify({ success: true, data: body }), { headers });
     }
 
@@ -45,9 +56,10 @@ export default async function handler(req) {
       if (!recordId) {
         return new Response(JSON.stringify({ success: false, error: 'Missing id' }), { status: 400, headers });
       }
-      const records = await redis.get('records') || [];
+      const raw = await r.get('records');
+      const records = raw ? JSON.parse(raw) : [];
       const filtered = records.filter(r => r.id !== recordId);
-      await redis.set('records', filtered);
+      await r.set('records', JSON.stringify(filtered));
       return new Response(JSON.stringify({ success: true, deleted: records.length - filtered.length }), { headers });
     }
 
