@@ -487,8 +487,8 @@ let _cacheTime = 0;
 const CACHE_TTL = 3000; // 3秒缓存
 
 // ===== Supabase 配置（与 index.html 保持一致） =====
-const SUPABASE_URL = '';  // 例: https://xxxx.supabase.co
-const SUPABASE_KEY = '';  // 例: eyJhbGci...
+const SUPABASE_URL = 'https://jafdovlcdkr.supabase.co';  // 例: https://xxxx.supabase.co
+const SUPABASE_KEY = 'sb_publishable_D-C3qOglabFLy8HlmBb_Iw_0wDOos35';  // 例: eyJhbGci...
 let _supabase = null;
 
 function initSupabase() {
@@ -972,6 +972,7 @@ function showToast(msg) {
 }
 
 // ============ Init ============
+initSupabase();
 (async () => { await renderDashboard(); })();
 </script>
 </body>

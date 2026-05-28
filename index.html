@@ -1238,8 +1238,8 @@ const MAX_SCORES = { opening: 10, structure: 15, product: 25, clinical: 25, valu
 const STORAGE_KEY = 'yuejian_scores';
 
 // ===== Supabase 配置（填入你的项目信息） =====
-const SUPABASE_URL = '';  // 例: https://xxxx.supabase.co
-const SUPABASE_KEY = '';  // 例: eyJhbGci...
+const SUPABASE_URL = 'https://jafdovlcdkr.supabase.co';  // 例: https://xxxx.supabase.co
+const SUPABASE_KEY = 'sb_publishable_D-C3qOglabFLy8HlmBb_Iw_0wDOos35';  // 例: eyJhbGci...
 let _supabase = null;
 
 function initSupabase() {
@@ -1848,6 +1848,7 @@ function showToast(msg) {
 
 // ============ 初始化 ============
 document.addEventListener('DOMContentLoaded', () => {
+    initSupabase();
     initScoringForm();
     updateRealtime();
 });
@@ -2601,6 +2602,7 @@ generateAIComment = function() {
 
 // 初始化检测语音识别支持
 document.addEventListener('DOMContentLoaded', () => {
+    initSupabase();
     initSpeechRecognition();
     syncFromServer();
 });
