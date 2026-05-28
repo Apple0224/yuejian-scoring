@@ -1236,10 +1236,6 @@ const MAX_SCORES = { opening: 10, structure: 15, product: 25, clinical: 25, valu
 // ============ 数据存储 ============
 const STORAGE_KEY = 'yuejian_scores';
 
-// ===== Supabase REST API 配置 =====
-const SUPABASE_URL = 'https://jafdovlcdkr.supabase.co';
-const SUPABASE_KEY = 'sb_publishable_D-C3qOglabFLy8HlmBb_Iw_0wDOos35';
-
 function getScores() {
     try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); }
     catch(e) { return []; }
@@ -1249,78 +1245,7 @@ function saveScores(scores) {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(scores));
 }
 
-// Supabase REST API 调用
-async function supabaseSelect() {
-    try {
-        const res = await fetch(SUPABASE_URL + '/rest/v1/scores?order=created_at.asc', {
-            headers: {
-                'apikey': SUPABASE_KEY,
-                'Authorization': 'Bearer ' + SUPABASE_KEY
-            }
-        });
-        if (!res.ok) { const t = await res.text(); throw new Error(t); }
-        return await res.json();
-    } catch(e) {
-        console.warn('Supabase GET 失败:', e.message);
-        return null;
-    }
-}
-
-async function supabaseUpsert(record) {
-    try {
-        const res = await fetch(SUPABASE_URL + '/rest/v1/scores', {
-            method: 'POST',
-            headers: {
-                'apikey': SUPABASE_KEY,
-                'Authorization': 'Bearer ' + SUPABASE_KEY,
-                'Content-Type': 'application/json',
-                'Prefer': 'resolution=merge-duplicates'
-            },
-            body: JSON.stringify(record)
-        });
-        if (!res.ok) { const t = await res.text(); throw new Error(t); }
-        return true;
-    } catch(e) {
-        console.warn('Supabase UPSERT 失败:', e.message);
-        return false;
-    }
-}
-
-async function supabaseDelete(id) {
-    try {
-        const res = await fetch(SUPABASE_URL + '/rest/v1/scores?id=eq.' + encodeURIComponent(id), {
-            method: 'DELETE',
-            headers: {
-                'apikey': SUPABASE_KEY,
-                'Authorization': 'Bearer ' + SUPABASE_KEY
-            }
-        });
-        if (!res.ok) { const t = await res.text(); throw new Error(t); }
-        return true;
-    } catch(e) {
-        console.warn('Supabase DELETE 失败:', e.message);
-        return false;
-    }
-}
-
-// 从服务器同步数据到本地
-async function syncFromServer() {
-    const serverData = await supabaseSelect();
-    if (!serverData) return;
-    const local = getScores();
-    const localIds = new Set(local.map(r => r.id));
-    let added = 0;
-    serverData.forEach(r => {
-        if (r.id && !localIds.has(r.id)) { local.push(r); added++; }
-    });
-    const serverIds = new Set(serverData.map(r => r.id));
-    for (const r of local) {
-        if (!serverIds.has(r.id)) await supabaseUpsert(r);
-    }
-    if (added > 0) saveScores(local);
-}
-
-// ============ 页面导航 ============// ============ 页面导航 ============
+// ============ 页面导航 ============// ============ 页面导航 ============// ============ 页面导航 ============
 function showPage(id) {
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
     document.getElementById(id).classList.add('active');
@@ -1620,7 +1545,7 @@ function doSubmit() {
     saveScores(allScores);
 
     // 同步到服务端（后台管理可查看）
-    await syncToServer(record);
+    syncToServer(record);
 
     showToast('✅ 提交成功！');
     setTimeout(() => {
@@ -1629,8 +1554,8 @@ function doSubmit() {
     }, 800);
 }
 
-async function syncToServer(record) {
-    await supabaseUpsert(record);
+function syncToServer(record) {
+    // 纯本地存储，数据通过JSON导出/导入同步
 }
 
 function resetScoringForm() {
