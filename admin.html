@@ -487,18 +487,9 @@ let _cacheTime = 0;
 const CACHE_TTL = 3000; // 3秒缓存
 
 // ===== Supabase 配置（与 index.html 保持一致） =====
-const SUPABASE_URL = 'https://jafdovlcdkr.supabase.co';  // 例: https://xxxx.supabase.co
-const SUPABASE_KEY = 'sb_publishable_D-C3qOglabFLy8HlmBb_Iw_0wDOos35';  // 例: eyJhbGci...
-let _supabase = null;
-
-function initSupabase() {
-    if (SUPABASE_URL && SUPABASE_KEY && window.supabase) {
-        _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-        console.log('Supabase 已连接');
-    } else {
-        console.warn('Supabase 未配置，使用本地存储模式');
-    }
-}
+// ===== Supabase REST API 配置 =====
+const SUPABASE_URL = 'https://jafdovlcdkr.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_D-C3qOglabFLy8HlmBb_Iw_0wDOos35';
 
 function getData() {
     if (_cachedData && (Date.now() - _cacheTime) < CACHE_TTL) {
@@ -508,39 +499,55 @@ function getData() {
     catch(e) { return []; }
 }
 
+async function supabaseSelect() {
+    try {
+        const res = await fetch(SUPABASE_URL + '/rest/v1/scores?order=created_at.asc', {
+            headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY }
+        });
+        if (!res.ok) return null;
+        return await res.json();
+    } catch(e) { return null; }
+}
+
+async function supabaseUpsert(record) {
+    try {
+        await fetch(SUPABASE_URL + '/rest/v1/scores', {
+            method: 'POST',
+            headers: {
+                'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY,
+                'Content-Type': 'application/json', 'Prefer': 'resolution=merge-duplicates'
+            },
+            body: JSON.stringify(record)
+        });
+    } catch(e) {}
+}
+
+async function supabaseDelete(id) {
+    try {
+        await fetch(SUPABASE_URL + '/rest/v1/scores?id=eq.' + encodeURIComponent(id), {
+            method: 'DELETE',
+            headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY }
+        });
+    } catch(e) {}
+}
+
 async function fetchData() {
-    if (_supabase) {
-        try {
-            const { data, error } = await _supabase.from('scores').select('*').order('created_at', { ascending: true });
-            if (!error && data) {
-                const local = getData();
-                const localIds = new Set(local.map(r => r.id));
-                let newFromServer = 0;
-                data.forEach(r => {
-                    if (r.id && !localIds.has(r.id)) { local.push(r); newFromServer++; }
-                });
-                const serverIds = new Set(data.map(r => r.id));
-                for (const r of local) {
-                    if (!serverIds.has(r.id)) {
-                        await _supabase.from('scores').upsert({
-                            id: r.id, examinee_name: r.examinee_name, team: r.team,
-                            judge_name: r.judge_name, exam_date: r.exam_date, duration: r.duration,
-                            opening_score: r.opening_score, structure_score: r.structure_score,
-                            product_score: r.product_score, clinical_score: r.clinical_score,
-                            value_action_score: r.value_action_score, total_score: r.total_score,
-                            level: r.level, comment: r.comment || '', transcript: r.transcript || '',
-                            created_at: r.created_at
-                        });
-                    }
-                }
-                if (newFromServer > 0) localStorage.setItem(STORAGE_KEY, JSON.stringify(local));
-                _cachedData = local;
-                _cacheTime = Date.now();
-                return local;
-            }
-        } catch(e) {
-            console.warn('Supabase fetch 失败，降级为本地:', e);
+    const serverData = await supabaseSelect();
+    if (serverData) {
+        const local = getData();
+        const localIds = new Set(local.map(r => r.id));
+        let newFromServer = 0;
+        serverData.forEach(r => {
+            if (r.id && !localIds.has(r.id)) { local.push(r); newFromServer++; }
+        });
+        const serverIds = new Set(serverData.map(r => r.id));
+        for (const r of local) {
+            if (!serverIds.has(r.id)) await supabaseUpsert(r);
         }
+        if (newFromServer > 0) localStorage.setItem(STORAGE_KEY, JSON.stringify(local));
+        _cachedData = local;
+        _cacheTime = Date.now();
+        return local;
     }
     const data = getData();
     _cachedData = data;
@@ -698,7 +705,7 @@ async function renderRecords() {
 
 async function deleteRecord(id) {
     if (!confirm('确定删除该评分记录？此操作不可恢复。')) return;
-    if (_supabase) { try { await _supabase.from('scores').delete().eq('id', id); } catch(e) {} }
+    await supabaseDelete(id);
     let data = getData();
     data = data.filter(d => d.id !== id);
     _cachedData = data;
@@ -710,7 +717,9 @@ async function deleteRecord(id) {
 async function clearAllData() {
     if (!confirm('⚠️ 确定清空所有评分数据？此操作不可恢复！')) return;
     if (!confirm('再次确认：清空所有数据？')) return;
-    if (_supabase) { try { await _supabase.from('scores').delete().neq('id', ''); } catch(e) {} }
+    // 清空服务器数据：逐条删除
+    const allDel = getData();
+    for (const r of allDel) { await supabaseDelete(r.id); }
     _cachedData = [];
     localStorage.setItem(STORAGE_KEY, '[]');
     showToast('已清空所有数据');
@@ -972,7 +981,6 @@ function showToast(msg) {
 }
 
 // ============ Init ============
-initSupabase();
 (async () => { await renderDashboard(); })();
 </script>
 </body>
